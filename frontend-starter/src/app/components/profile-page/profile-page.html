@@ -1,14 +1,47 @@
 <section class="card">
-  <h1>Mon profil</h1>
-  <button type="button" (click)="load()">Charger mon profil</button>
+  <div class="row">
+    <h1>Mon profil</h1>
+    <button type="button" (click)="load()" [disabled]="loading()">
+      {{ loading() ? 'Actualisation…' : 'Actualiser' }}
+    </button>
+  </div>
+
+  @if (loading() && !auth.currentUser()) {
+    <p>Chargement de vos informations…</p>
+  }
+
   @if (auth.currentUser(); as user) {
-    <p>
-      <b>{{ user.name }}</b><br />{{ user.email }}<br />
-      Membre depuis {{ user.createdAt.slice(0, 10) }}
-    </p>
-    <form [formGroup]="form" (ngSubmit)="save()">
-      <label>Nouveau nom<input formControlName="name" /></label>
-      <button type="submit">Enregistrer</button>
-    </form>
+    <div class="profile-details">
+      <p>
+        <strong>Email :</strong> {{ user.email }}<br />
+        <small class="member-since">Membre depuis le {{ user.createdAt.slice(0, 10) }}</small>
+      </p>
+
+      <form [formGroup]="form" (ngSubmit)="save()">
+        <label>
+          Nom d'affichage
+          <input formControlName="name" autocomplete="name" />
+          @if (form.controls.name.touched && form.controls.name.errors; as errors) {
+            @if (errors['required']) {
+              <small class="field-error">Le nom est requis.</small>
+            } @else if (errors['minlength']) {
+              <small class="field-error">Le nom doit comporter au moins 2 caractères.</small>
+            }
+          }
+        </label>
+
+        <button type="submit" [disabled]="form.invalid || saving()">
+          {{ saving() ? 'Enregistrement…' : 'Enregistrer' }}
+        </button>
+      </form>
+    </div>
+  }
+
+  @if (success()) {
+    <p class="success" role="status">{{ success() }}</p>
+  }
+
+  @if (error()) {
+    <p class="error" role="alert">{{ error() }}</p>
   }
 </section>

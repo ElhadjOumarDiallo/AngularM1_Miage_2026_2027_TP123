@@ -27,6 +27,11 @@ button:disabled { opacity: 0.45; }
 .pager { margin: 1rem 0; }
 audio { width: 100%; }
 .error { color: #a33; }
+.success { color: #155724; background-color: #d4edda; border: 1px solid #c3e6cb; border-radius: 6px; padding: 0.5rem 0.8rem; margin: 0.5rem 0; font-size: 0.9rem; }
+.field-error { display: block; color: #a33; font-size: 0.8rem; margin-top: 0.25rem; font-weight: 500; }
+.logout-btn { background: transparent; color: white; border: 1px solid rgba(255, 255, 255, 0.4); border-radius: 6px; padding: 0.35rem 0.75rem; font-size: 0.85rem; cursor: pointer; transition: background 0.2s, border-color 0.2s; }
+.logout-btn:hover { background: rgba(255, 255, 255, 0.15); border-color: white; }
+.user-tag { color: #a2dec9; font-size: 0.9rem; align-self: center; }
 
 @media (max-width: 720px) {
   header, .grid { display: block; }

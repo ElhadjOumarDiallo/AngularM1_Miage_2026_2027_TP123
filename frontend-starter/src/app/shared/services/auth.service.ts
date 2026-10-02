@@ -12,6 +12,14 @@ export class AuthService {
   readonly currentUser = signal<User | null>(null);
   readonly token = signal<string | null>(localStorage.getItem('gpc_token'));
 
+  constructor() {
+    if (this.token()) {
+      this.profile().subscribe({
+        error: () => this.logout(),
+      });
+    }
+  }
+
   login(email: string, password: string) {
     return this.http
       .post<AuthResponse>('/api/auth/login', { email, password })

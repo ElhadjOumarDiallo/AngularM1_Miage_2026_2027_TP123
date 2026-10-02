@@ -1,1 +1,3 @@
-:host { display: block; max-width: 700px; margin: 0 auto; }
+:host { display: block; max-width: 600px; margin: 0 auto; }
+.profile-details { margin-top: 1rem; }
+.member-since { color: #61756f; font-size: 0.85rem; }

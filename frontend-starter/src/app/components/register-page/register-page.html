@@ -1,13 +1,49 @@
 <section class="card">
   <h1>Créer un compte</h1>
   <form [formGroup]="form" (ngSubmit)="submit()">
-    <label>Nom<input formControlName="name" /></label>
-    <label>Email<input type="email" formControlName="email" /></label>
-    <label>Mot de passe<input type="password" formControlName="password" /></label>
-    <button type="submit">Créer mon compte</button>
+    <label>
+      Nom
+      <input type="text" formControlName="name" autocomplete="name" />
+      @if (form.controls.name.touched && form.controls.name.errors; as errors) {
+        @if (errors['required']) {
+          <small class="field-error">Le nom est requis.</small>
+        } @else if (errors['minlength']) {
+          <small class="field-error">Le nom doit comporter au moins 2 caractères.</small>
+        }
+      }
+    </label>
+
+    <label>
+      Email
+      <input type="email" formControlName="email" autocomplete="email" />
+      @if (form.controls.email.touched && form.controls.email.errors; as errors) {
+        @if (errors['required']) {
+          <small class="field-error">L'adresse email est requise.</small>
+        } @else if (errors['email']) {
+          <small class="field-error">Format d'email invalide.</small>
+        }
+      }
+    </label>
+
+    <label>
+      Mot de passe (8 caractères minimum)
+      <input type="password" formControlName="password" autocomplete="new-password" />
+      @if (form.controls.password.touched && form.controls.password.errors; as errors) {
+        @if (errors['required']) {
+          <small class="field-error">Le mot de passe est requis.</small>
+        } @else if (errors['minlength']) {
+          <small class="field-error">Le mot de passe doit comporter au moins 8 caractères.</small>
+        }
+      }
+    </label>
+
+    <button type="submit" [disabled]="form.invalid || loading()">
+      {{ loading() ? 'Création en cours…' : 'Créer mon compte' }}
+    </button>
   </form>
+
   @if (error()) {
-    <p class="error">{{ error() }}</p>
+    <p class="error" role="alert">{{ error() }}</p>
   }
   <p><a routerLink="/login">Déjà inscrit ?</a></p>
 </section>
