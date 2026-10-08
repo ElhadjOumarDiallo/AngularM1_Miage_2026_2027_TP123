@@ -6,61 +6,207 @@
   </div>
 
   <div class="grid">
+    <!-- Formulaire d'upload réactif avec progression et pochette de couverture -->
     <article class="card">
-      <h2>Importer</h2>
-      <label>Titre<input [formControl]="title" /></label>
-      <label>Fichier audio<input type="file" accept="audio/*" (change)="choose($event)" /></label>
-      <button type="button" (click)="upload()" [disabled]="!file">Envoyer</button>
+      <h2 class="card-title">
+        <mat-icon class="header-icon">cloud_upload</mat-icon>
+        Importer un morceau
+      </h2>
+
+      <label>
+        Titre du morceau
+        <input [formControl]="title" placeholder="Ex : Solo Blues en La mineur (optionnel)" />
+      </label>
+
+      <label>
+        Artiste / Groupe (optionnel)
+        <input [formControl]="artist" placeholder="Ex : B.B. King, Gary Moore..." />
+      </label>
+
+      <label>
+        Fichier audio (max 25 Mo)
+        <input #fileInput type="file" accept="audio/*" (change)="choose($event)" />
+      </label>
+
+      <!-- Option avancée : Image de couverture (upload ou recherche web) -->
+      <div class="cover-field">
+        <span class="cover-label">Image de couverture (optionnel, max 5 Mo)</span>
+        <div class="cover-inputs">
+          <input #coverInput type="file" accept="image/jpeg,image/png,image/webp" (change)="chooseCover($event)" class="cover-file-input" />
+          <button type="button" class="btn-web-cover" (click)="searchWebCover()" [disabled]="searchingCovers()" title="Rechercher une pochette sur le Web">
+            <mat-icon>{{ searchingCovers() ? 'hourglass_top' : 'image_search' }}</mat-icon>
+            <span>{{ searchingCovers() ? 'Recherche…' : 'Chercher sur le Web' }}</span>
+          </button>
+        </div>
+
+        @if (coverPreview()) {
+        <div class="cover-preview-box">
+          <img [src]="coverPreview()" alt="Aperçu de la pochette sélectionnée" class="cover-preview-img" />
+          <div class="cover-preview-info">
+            <span>Pochette sélectionnée</span>
+            <button type="button" class="btn-remove-cover" (click)="removeCover(coverInput)">Retirer</button>
+          </div>
+        </div>
+        }
+
+        @if (coverSuggestions().length > 0) {
+        <div class="cover-suggestions">
+          <p class="suggestions-title">Suggestions trouvées sur le Web (cliquez pour sélectionner) :</p>
+          <div class="suggestions-grid">
+            @for (s of coverSuggestions(); track s.coverUrl) {
+            <button type="button" class="suggestion-card" (click)="selectSuggestion(s, coverInput)" [title]="s.artist + ' - ' + s.title">
+              <img [src]="s.coverUrl" [alt]="s.title" class="suggestion-img" />
+              <span class="suggestion-caption">{{ s.title }}</span>
+            </button>
+            }
+          </div>
+        </div>
+        }
+      </div>
+
+      @if (uploadProgress() !== null) {
+      <div class="progress-wrap" aria-label="Progression du téléversement">
+        <progress [value]="uploadProgress()" max="100"></progress>
+        <span class="progress-value">{{ uploadProgress() }}%</span>
+      </div>
+      }
+
+      @if (uploadError()) {
+      <p class="error" role="alert">{{ uploadError() }}</p>
+      }
+
+      @if (uploadSuccess()) {
+      <p class="success" role="status">{{ uploadSuccess() }}</p>
+      }
+
+      <button type="button" (click)="upload(fileInput, coverInput)" [disabled]="!file || uploading()" class="btn-primary">
+        <mat-icon>{{ uploading() ? 'hourglass_top' : 'upload' }}</mat-icon>
+        <span>{{ uploading() ? 'Envoi en cours…' : 'Envoyer le fichier' }}</span>
+      </button>
     </article>
 
+    <!-- Bibliothèque de pistes sous forme de cards responsives et accessibles -->
     <article class="card">
-      <div class="row">
-        <h2>Mes pistes ({{ total() }})</h2>
-        <button type="button" (click)="load()" [disabled]="loading()">
-          {{ loading() ? 'Actualisation…' : 'Actualiser' }}
+      <div class="row header-row">
+        <h2 class="card-title">
+          <mat-icon class="header-icon">library_music</mat-icon>
+          Mes pistes ({{ total() }})
+        </h2>
+        <button type="button" (click)="load()" [disabled]="loading()" class="btn-refresh" title="Actualiser la liste">
+          <mat-icon>refresh</mat-icon>
+          <span>{{ loading() ? 'Chargement…' : 'Actualiser' }}</span>
         </button>
+      </div>
+
+      <!-- Barre de recherche globale dans toute la base -->
+      <div class="search-wrap">
+        <mat-icon class="search-icon">search</mat-icon>
+        <input
+          [formControl]="searchControl"
+          placeholder="Rechercher dans toute votre bibliothèque (titre ou fichier)…"
+          aria-label="Rechercher dans toute la bibliothèque"
+        />
+        @if (searchTerm()) {
+        <button type="button" class="btn-clear" (click)="clearSearch()" title="Effacer la recherche">
+          <mat-icon>close</mat-icon>
+        </button>
+        }
       </div>
 
       @if (loading()) {
-        <p>Chargement des pistes…</p>
+      <p class="loading-state">
+        <mat-icon class="spin-icon">sync</mat-icon>
+        <span>Chargement des pistes…</span>
+      </p>
       }
 
       @if (error()) {
-        <p class="error" role="alert">{{ error() }}</p>
+      <p class="error" role="alert">{{ error() }}</p>
       }
 
-      @for (track of tracks(); track track.id) {
-        <div class="track">
-          <div>
-            <b>{{ track.title }}</b>
-            <small>{{ track.originalName }} · {{ (track.size / 1024).toFixed(1) }} Ko</small>
+      <div class="tracks-list" role="list">
+        @for (track of tracks(); track track.id) {
+        <article
+          class="track-item"
+          [class.active-track]="currentTrack()?.id === track.id"
+          role="listitem"
+          [attr.aria-label]="track.title"
+        >
+          <!-- Vignette de couverture d'album / morceau -->
+          <div class="track-cover-wrap">
+            @if (track.coverUrl) {
+            <img
+              [src]="track.coverUrl"
+              [alt]="'Pochette du morceau ' + track.title"
+              class="track-cover-img"
+              (error)="onCoverError($event)"
+            />
+            } @else {
+            <div class="track-cover-fallback" aria-hidden="true">
+              <mat-icon>music_note</mat-icon>
+            </div>
+            }
           </div>
-          <button type="button" (click)="play(track)" [attr.aria-label]="'Lire ' + track.title">▶</button>
-        </div>
-      } @empty {
-        @if (!loading()) {
-          <p>Aucune piste dans votre bibliothèque.</p>
-        }
-      }
 
-      <div class="pager" aria-label="Pagination avec boutons Précédent et Suivant">
-        <button
-          type="button"
-          (click)="go(page() - 1)"
-          [disabled]="page() <= 1 || loading()"
-        >
-          Précédent
-        </button>
-        <span>Page {{ page() }} / {{ pages() }}</span>
-        <button
-          type="button"
-          (click)="go(page() + 1)"
-          [disabled]="page() >= pages() || loading()"
-        >
-          Suivant
-        </button>
+          <div class="track-info">
+            <div class="track-title-row">
+              <h3 class="track-title">{{ track.title }}</h3>
+              <span class="track-badge">{{ formatMime(track.mimeType, track.originalName) }}</span>
+            </div>
+
+            @if (track.artist) {
+            <p class="track-artist">
+              <mat-icon class="artist-icon">person</mat-icon>
+              <span>{{ track.artist }}</span>
+            </p>
+            }
+
+            <div class="track-details">
+              <span class="detail-file" [title]="track.originalName">{{ track.originalName }}</span>
+              <span class="detail-separator">·</span>
+              <span class="detail-size">{{ formatSize(track.size) }}</span>
+              <span class="detail-separator">·</span>
+              <span class="detail-date">{{ formatDate(track.createdAt) }}</span>
+            </div>
+          </div>
+
+          <div class="track-actions">
+            <button
+              type="button"
+              class="btn-play"
+              (click)="play(track)"
+              [disabled]="audioLoading() && currentTrack()?.id === track.id"
+              [attr.aria-label]="(currentTrack()?.id === track.id ? 'Rejouer ' : 'Lire ') + track.title"
+            >
+              <mat-icon>{{ currentTrack()?.id === track.id ? 'replay' : 'play_arrow' }}</mat-icon>
+              <span>{{ currentTrack()?.id === track.id ? 'Rejouer' : 'Écouter' }}</span>
+            </button>
+
+            <button
+              type="button"
+              class="btn-delete"
+              (click)="deleteTrack(track)"
+              [disabled]="deletingId() === track.id"
+              [attr.aria-label]="'Supprimer le morceau ' + track.title"
+              title="Supprimer définitivement ce morceau"
+            >
+              <mat-icon>delete_outline</mat-icon>
+            </button>
+          </div>
+        </article>
+        } @empty {
+        @if (!loading()) {
+        <p class="empty-state">
+          <mat-icon>folder_open</mat-icon>
+          <span>
+            {{ searchTerm() ? 'Aucun morceau ne correspond à votre recherche.' : 'Aucune piste dans votre bibliothèque.' }}
+          </span>
+        </p>
+        }
+        }
       </div>
 
+      <!-- Composant Paginator Angular Material synchronisé avec le total serveur -->
       <mat-paginator
         [length]="total()"
         [pageSize]="limit()"
@@ -72,9 +218,41 @@
       >
       </mat-paginator>
 
-      @if (audioUrl()) {
+      <!-- Section Lecteur Audio sécurisé avec pochette -->
+      <div class="player-section">
+        @if (audioLoading()) {
+        <p class="audio-loading">
+          <mat-icon class="spin-icon">hourglass_empty</mat-icon>
+          <span>Chargement du flux audio sécurisé…</span>
+        </p>
+        }
+
+        @if (audioError()) {
+        <p class="error" role="alert">{{ audioError() }}</p>
+        }
+
+        @if (currentTrack(); as active) {
+        <div class="now-playing">
+          @if (active.coverUrl) {
+          <img [src]="active.coverUrl" [alt]="'Pochette de ' + active.title" class="now-playing-cover" (error)="onCoverError($event)" />
+          } @else {
+          <mat-icon class="now-playing-icon">headset</mat-icon>
+          }
+          <div class="now-playing-text">
+            <span class="now-playing-label">En cours d'écoute :</span>
+            <b>{{ active.title }}</b>
+            @if (active.artist) {
+            <span class="active-artist">({{ active.artist }})</span>
+            }
+            <small>({{ active.originalName }} · {{ formatSize(active.size) }})</small>
+          </div>
+        </div>
+        }
+
+        @if (audioUrl()) {
         <audio [src]="audioUrl()" controls autoplay></audio>
-      }
+        }
+      </div>
     </article>
   </div>
 </section>

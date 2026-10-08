@@ -6,37 +6,184 @@
   background: #f3f7f5;
 }
 
-* { box-sizing: border-box; }
-body { margin: 0; }
-header { display: flex; justify-content: space-between; align-items: center; padding: 1rem 5vw; color: white; background: #123d32; }
-header small { opacity: 0.7; }
-nav { display: flex; gap: 1rem; }
-a { color: #1d755e; }
-header a { color: white; }
-main { max-width: 1050px; margin: 2rem auto; padding: 0 1rem; }
-.hero { margin-bottom: 1rem; padding: 2rem; color: white; background: linear-gradient(120deg, #123d32, #276c57); border-radius: 20px; }
-.eyebrow { letter-spacing: 0.15em; font-size: 0.75rem; }
-.grid { display: grid; grid-template-columns: 1fr 2fr; gap: 1rem; }
-.card { padding: 1.3rem; background: white; border-radius: 16px; box-shadow: 0 8px 25px #17312a14; }
-.card form, label { display: grid; gap: 0.4rem; }
-label { margin: 0.8rem 0; }
-input { padding: 0.75rem; border: 1px solid #b8cbc5; border-radius: 8px; }
-button { padding: 0.7rem 1rem; color: white; background: #1d755e; border: 0; border-radius: 8px; cursor: pointer; }
-button:disabled { opacity: 0.45; }
-.row, .track, .pager { display: flex; align-items: center; justify-content: space-between; gap: 1rem; }
-.track { padding: 0.8rem 0; border-bottom: 1px solid #e1ebe7; }
-.track small { display: block; color: #61756f; }
-.pager { margin: 1rem 0; }
-audio { width: 100%; }
-.error { color: #a33; }
-.success { color: #155724; background-color: #d4edda; border: 1px solid #c3e6cb; border-radius: 6px; padding: 0.5rem 0.8rem; margin: 0.5rem 0; font-size: 0.9rem; }
-.field-error { display: block; color: #a33; font-size: 0.8rem; margin-top: 0.25rem; font-weight: 500; }
-.logout-btn { background: transparent; color: white; border: 1px solid rgba(255, 255, 255, 0.4); border-radius: 6px; padding: 0.35rem 0.75rem; font-size: 0.85rem; cursor: pointer; transition: background 0.2s, border-color 0.2s; }
-.logout-btn:hover { background: rgba(255, 255, 255, 0.15); border-color: white; }
-.user-tag { color: #a2dec9; font-size: 0.9rem; align-self: center; }
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+}
+
+header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 1rem 5vw;
+  color: white;
+  background: #123d32;
+}
+
+header small {
+  opacity: 0.7;
+}
+
+nav {
+  display: flex;
+  gap: 1rem;
+}
+
+a {
+  color: #1d755e;
+}
+
+header a {
+  color: white;
+}
+
+main {
+  max-width: 1050px;
+  margin: 2rem auto;
+  padding: 0 1rem;
+}
+
+.hero {
+  margin-bottom: 1rem;
+  padding: 2rem;
+  color: white;
+  background: linear-gradient(120deg, #123d32, #276c57);
+  border-radius: 20px;
+}
+
+.eyebrow {
+  letter-spacing: 0.15em;
+  font-size: 0.75rem;
+}
+
+.grid {
+  display: grid;
+  grid-template-columns: 1fr 2fr;
+  gap: 1rem;
+}
+
+.card {
+  padding: 1.3rem;
+  background: white;
+  border-radius: 16px;
+  box-shadow: 0 8px 25px #17312a14;
+}
+
+.card form,
+label {
+  display: grid;
+  gap: 0.4rem;
+}
+
+label {
+  margin: 0.8rem 0;
+}
+
+input {
+  padding: 0.75rem;
+  border: 1px solid #b8cbc5;
+  border-radius: 8px;
+}
+
+button {
+  padding: 0.7rem 1rem;
+  color: white;
+  background: #1d755e;
+  border: 0;
+  border-radius: 8px;
+  cursor: pointer;
+}
+
+button:disabled {
+  opacity: 0.45;
+}
+
+.row,
+.track,
+.pager {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+}
+
+.track {
+  padding: 0.8rem 0;
+  border-bottom: 1px solid #e1ebe7;
+}
+
+.track small {
+  display: block;
+  color: #61756f;
+}
+
+.pager {
+  margin: 1rem 0;
+}
+
+audio {
+  width: 100%;
+}
+
+.error {
+  color: #a33;
+}
+
+.success {
+  color: #155724;
+  background-color: #d4edda;
+  border: 1px solid #c3e6cb;
+  border-radius: 6px;
+  padding: 0.5rem 0.8rem;
+  margin: 0.5rem 0;
+  font-size: 0.9rem;
+}
+
+.field-error {
+  display: block;
+  color: #a33;
+  font-size: 0.8rem;
+  margin-top: 0.25rem;
+  font-weight: 500;
+}
+
+.logout-btn {
+  background: transparent;
+  color: white;
+  border: 1px solid rgba(255, 255, 255, 0.4);
+  border-radius: 6px;
+  padding: 0.35rem 0.75rem;
+  font-size: 0.85rem;
+  cursor: pointer;
+  transition: background 0.2s, border-color 0.2s;
+}
+
+.logout-btn:hover {
+  background: rgba(255, 255, 255, 0.15);
+  border-color: white;
+}
+
+.user-tag {
+  color: #a2dec9;
+  font-size: 0.9rem;
+  align-self: center;
+}
 
 @media (max-width: 720px) {
-  header, .grid { display: block; }
-  nav { margin-top: 1rem; }
-  .grid .card { margin-bottom: 1rem; }
+
+  header,
+  .grid {
+    display: block;
+  }
+
+  nav {
+    margin-top: 1rem;
+  }
+
+  .grid .card {
+    margin-bottom: 1rem;
+  }
 }

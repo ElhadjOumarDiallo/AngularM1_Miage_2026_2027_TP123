@@ -18,6 +18,9 @@ const schema = new mongoose.Schema(
     storedName: { type: String, required: true, select: false },
     mimeType: { type: String, required: true },
     size: { type: Number, required: true, min: 0 },
+    coverUrl: { type: String, trim: true },
+    coverStoredName: { type: String, select: false },
+    artist: { type: String, trim: true },
   },
   { timestamps: true },
 );
@@ -38,6 +41,8 @@ schema.methods.toPublic = function () {
     originalName: this.originalName,
     mimeType: this.mimeType,
     size: this.size,
+    coverUrl: this.coverUrl,
+    artist: this.artist,
     createdAt: this.createdAt,
   };
 };
