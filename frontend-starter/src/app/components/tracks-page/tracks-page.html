@@ -15,28 +15,63 @@
 
     <article class="card">
       <div class="row">
-        <h2>Mes pistes</h2>
-        <button type="button" (click)="load()">Actualiser</button>
+        <h2>Mes pistes ({{ total() }})</h2>
+        <button type="button" (click)="load()" [disabled]="loading()">
+          {{ loading() ? 'Actualisation…' : 'Actualiser' }}
+        </button>
       </div>
+
       @if (loading()) {
-        <p>Chargement…</p>
+        <p>Chargement des pistes…</p>
       }
+
+      @if (error()) {
+        <p class="error" role="alert">{{ error() }}</p>
+      }
+
       @for (track of tracks(); track track.id) {
         <div class="track">
           <div>
             <b>{{ track.title }}</b>
-            <small>{{ track.originalName }} · {{ track.size }} Ko</small>
+            <small>{{ track.originalName }} · {{ (track.size / 1024).toFixed(1) }} Ko</small>
           </div>
           <button type="button" (click)="play(track)" [attr.aria-label]="'Lire ' + track.title">▶</button>
         </div>
       } @empty {
-        <p>Aucune piste.</p>
+        @if (!loading()) {
+          <p>Aucune piste dans votre bibliothèque.</p>
+        }
       }
-      <div class="pager">
-        <button type="button" (click)="go(page() - 1)" [disabled]="page() === 1">Préc.</button>
+
+      <div class="pager" aria-label="Pagination avec boutons Précédent et Suivant">
+        <button
+          type="button"
+          (click)="go(page() - 1)"
+          [disabled]="page() <= 1 || loading()"
+        >
+          Précédent
+        </button>
         <span>Page {{ page() }} / {{ pages() }}</span>
-        <button type="button" (click)="go(page() + 1)" [disabled]="page() === pages()">Suiv.</button>
+        <button
+          type="button"
+          (click)="go(page() + 1)"
+          [disabled]="page() >= pages() || loading()"
+        >
+          Suivant
+        </button>
       </div>
+
+      <mat-paginator
+        [length]="total()"
+        [pageSize]="limit()"
+        [pageIndex]="page() - 1"
+        [pageSizeOptions]="[5, 10, 20]"
+        [disabled]="loading()"
+        (page)="onPageChange($event)"
+        aria-label="Sélectionner la page"
+      >
+      </mat-paginator>
+
       @if (audioUrl()) {
         <audio [src]="audioUrl()" controls autoplay></audio>
       }

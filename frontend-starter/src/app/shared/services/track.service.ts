@@ -1,5 +1,5 @@
 import { inject, Injectable } from '@angular/core';
-import { HttpClient } from '@angular/common/http';
+import { HttpClient, HttpParams } from '@angular/common/http';
 import { Page } from '../models/page.model';
 import { Track } from '../models/track.model';
 
@@ -9,9 +9,11 @@ export class TrackService {
   private readonly http = inject(HttpClient);
 
   list(page = 1, limit = 5) {
-    return this.http.get<Page<Track>>('/api/tracks', {
-      params: { page, limit },
-    });
+    const params = new HttpParams()
+      .set('page', page.toString())
+      .set('limit', limit.toString());
+
+    return this.http.get<Page<Track>>('/api/tracks', { params });
   }
 
   upload(file: File, title: string) {
