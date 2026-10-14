@@ -168,3 +168,162 @@ Pour valider l'évaluation auprès de l'enseignant :
    - **Statut HTTP** : `404 Not Found`
    - **Corps JSON** : `{"message": "Piste inconnue"}`
    - **Comportement UI** : Notification `MatSnackBar` d'avertissement et suppression automatique de la carte fantôme via `load()`.
+
+---
+
+## 3. Mission 6 — Progression de l’Upload (« Pourcentage et états visibles »)
+
+### 3.1. Fiche Synthétique de la Mission (Conforme au Modèle IA)
+
+- **Objectif** :  
+  Faire évoluer le processus de téléversement d'un morceau pour afficher en direct le pourcentage de progression grâce aux événements HTTP bas niveau d'Angular (`reportProgress: true`, `observe: 'events'`), distinguer sans ambiguïté les 4 états du cycle de vie (Inactif, En cours avec jauge et pourcentage, Réussite, Échec), verrouiller l'ensemble des contrôles du formulaire pour interdire toute modification concurrente ou seconde soumission, et garantir l'étanchéité des logs vis-à-vis des données sensibles (ni mot de passe ni JWT dans la console).
+
+- **Prompt principal** :  
+  > *« relis bien les détails de la mission 6 : Progression de l’upload avec la production attendue qui est pourcentage et états visibles, implemente cette partie et met à jour le rapport »*
+
+- **Plan proposé par l'agent** :  
+  1. Auditer [`track.service.ts`](frontend-starter/src/app/shared/services/track.service.ts) pour vérifier la configuration d'Angular `HttpClient` avec `{ reportProgress: true, observe: 'events' }`.
+  2. Implémenter le verrouillage global du formulaire dans [`tracks-page.html`](frontend-starter/src/app/components/tracks-page/tracks-page.html) en englobant tous les champs (titre, artiste, fichier audio, cover locale, recherche web) dans un conteneur `<fieldset [disabled]="uploading()">`.
+  3. Modéliser graphiquement les 4 états attendus par le sujet :
+     - **État 1 (Inactif / Absence d'upload)** : Formulaire accessible, bouton prêt.
+     - **État 2 (Upload en cours)** : Bannière dédiée avec icône rotative `sync`, texte *« Téléversement en cours… »*, pourcentage en gras (`{{ uploadProgress() }}%`), barre HTML5 `<progress>` animée et bouton désactivé affichant le pourcentage en temps réel.
+     - **État 3 (Réussite)** : Message de confirmation vert avec icône `check_circle`, notification `MatSnackBar`, remise à zéro complète du formulaire et rechargement de la première page.
+     - **État 4 (Échec)** : Message d'erreur rouge avec icône `error_outline`, notification `MatSnackBar`, réactivation des contrôles pour permettre une nouvelle tentative.
+  4. Mettre à jour [`tracks-page.ts`](frontend-starter/src/app/components/tracks-page/tracks-page.ts) pour filtrer les types d'événements `HttpEventType.UploadProgress` et `HttpEventType.Response`.
+  5. Harmoniser le style CSS dans [`tracks-page.css`](frontend-starter/src/app/components/tracks-page/tracks-page.css) (style du `fieldset`, animations `@keyframes spin`, jauge émeraude).
+  6. Valider le build avec `npm run build` et documenter l'analyse théorique sur les Observables multi-émissions.
+
+- **Vérifications réalisées par le binôme** :  
+  - **Compilation sans erreur** : Validation de `ng build` compilant avec un code de sortie 0 en 8.4s.
+  - **Transition des 4 états vérifiée dans le navigateur** :
+    - *Avant sélection* : Le bouton affiche *« Envoyer le fichier »* et reste désactivé tant qu'aucun fichier n'est choisi.
+    - *Pendant l'envoi d'un fichier lourd (ex: `song2.mp3`, 6.4 Mo)* :
+      - Tous les champs de texte et les boutons de sélection de fichiers sont immédiatement grisés et non cliquables via le `fieldset:disabled`.
+      - Le bouton principal bascule sur *« Téléversement (X%)… »* et refuse tout clic supplémentaire (prévention stricte de la double soumission).
+      - La jauge verte progresse de manière fluide : 15%, 42%, 78%, 100%.
+    - *À la fin du transfert* :
+      - Dès la réception du statut `201 Created`, le message *« « Solo Blues » a été importé avec succès ! »* s'affiche dans la carte et via le `MatSnackBar`.
+      - Le formulaire est entièrement réinitialisé (titre, artiste, inputs fichiers vidés).
+      - La liste des morceaux recharge la page 1 où la nouvelle piste apparaît en tête.
+  - **Test d'échec simulé** : Coupure réseau ou tentative avec fichier invalide $\rightarrow$ l'état d'erreur rouge apparaît, le `fieldset` se déverrouille immédiatement pour permettre à l'utilisateur de corriger sa saisie.
+  - **Audit de sécurité Console DevTools** : Aucune chaîne de token JWT, mot de passe ou payload sensible n'est imprimée dans la console (`console.debug` ne consigne que l'ID public de la piste).
+
+- **Erreurs ou propositions rejetées** :  
+  - *Erreur d'exécution critique résolue : `NG02824` (`FETCH_UPLOAD_PROGRESS_NOT_SUPPORTED`)* :  
+    En Angular 22, le moteur de transport HTTP par défaut de `provideHttpClient()` est passé de `XMLHttpRequest` à l'API moderne `FetchBackend`. Or, l'API native `fetch` du navigateur ne prend pas en charge la capture des événements de progression montante (`xhr.upload.onprogress`). Lorsque `reportProgress: true` est activé sous `FetchBackend`, Angular 22 bloque immédiatement la requête avec l'erreur d'exécution `NG02824`.  
+    **Solution adoptée** : Ajout du provider `withXhr()` dans `main.ts` (`provideHttpClient(withInterceptors([authInterceptor]), withXhr())`), restaurant l'utilisation de `HttpXhrBackend` qui supporte nativement le suivi d'upload.
+  - *Proposition rejetée : Lier `[disabled]="uploading()"` individuellement sur chaque `FormControl` dans le template* :  
+    En Angular Reactive Forms, l'attribut HTML `[disabled]` sur un input lié à un `FormControl` déclenche un avertissement explicite dans la console (*« It looks like you're using the disabled attribute with a Reactive Forms directive... »*). Pour respecter les standards Angular et le HTML sémantique, le binôme a adopté un conteneur `<fieldset [disabled]="uploading()">` qui désactive nativement tous les contrôles enfants sans aucun warning.
+  - *Erreur évitée : Considérer que le premier événement reçu marque la fin de la requête* :  
+    Sans l'inspection de `event.type`, le composant tenterait de lire `event.body` dès le premier paquet de progression (où `event.body` est encore `undefined`), ce qui ferait crasher l'application avec un `TypeError`. Le filtrage explicite via `HttpEventType.Response` est obligatoire.
+
+- **Fichiers effectivement modifiés** :  
+  - [`frontend-starter/src/main.ts`](frontend-starter/src/main.ts) : Ajout du provider `withXhr()` pour éliminer l'erreur `NG02824` et activer le suivi d'upload XHR.
+  - [`frontend-starter/src/app/shared/services/track.service.ts`](frontend-starter/src/app/shared/services/track.service.ts) : Options `reportProgress: true` et `reportUploadProgress: true`.
+  - [`frontend-starter/src/app/components/tracks-page/tracks-page.html`](frontend-starter/src/app/components/tracks-page/tracks-page.html) : Encapsulation dans `<fieldset [disabled]="uploading()">`, bannière d'état enrichie, barre `<progress>` avec libellé et bouton dynamique.
+  - [`frontend-starter/src/app/components/tracks-page/tracks-page.ts`](frontend-starter/src/app/components/tracks-page/tracks-page.ts) : Gestion des événements `HttpEventType.UploadProgress`, calcul avec repli sur `file.size` et notification `MatSnackBar`.
+  - [`frontend-starter/src/app/components/tracks-page/tracks-page.css`](frontend-starter/src/app/components/tracks-page/tracks-page.css) : Styles pour `.upload-fieldset:disabled`, `.progress-header`, `.spin-icon` et animation `@keyframes spin`.
+  - [`Rapport_TP3.md`](Rapport_TP3.md) : Ajout de la section Mission 6.
+
+- **Preuve de fonctionnement** :  
+  - Compilation réussie du bundle Angular (`ng build`, 0 erreur).
+  - Événements de progression `HttpEventType.UploadProgress` observés avec `event.loaded` et `event.total`.
+  - Réponse finale `HTTP 201 Created` avec rechargement de la bibliothèque.
+
+- **Ce que chaque membre sait maintenant expliquer sans l'agent** :  
+  - Pourquoi une requête HTTP avec progression émet un flux continu d'événements et comment Angular calcule le pourcentage.
+  - Comment empêcher les doubles soumissions réseau grâce à la gestion d'état réactif (`uploading()`).
+  - Pourquoi le token JWT et le mot de passe ne doivent jamais transiter dans les logs clients.
+
+---
+
+### 3.2. Architecture et Cycle de Vie des Événements HTTP (`HttpEventType`)
+
+Contrairement à un appel standard où l'Observable RxJS ne délivre qu'une seule valeur, l'option `{ reportProgress: true, observe: 'events' }` transforme `HttpClient.post()` en un flux multi-émissions :
+
+```mermaid
+sequenceDiagram
+    autonumber
+    participant UI as TracksPageComponent (HTML/TS)
+    participant Serv as TrackService
+    participant Http as HttpClient & authInterceptor
+    participant Browser as Moteur Réseau du Navigateur
+    participant Server as Backend Express (Multer)
+
+    UI->>UI: upload() : uploading.set(true), uploadProgress.set(0)
+    Note over UI: Le fieldset est désactivé (anti-double soumission)
+    UI->>Serv: upload(file, title, ...)
+    Serv->>Http: POST /api/tracks { reportProgress: true, observe: 'events' }
+    Http->>Browser: Envoi de la requête multipart
+    Browser-->>Http: HttpEventType.Sent (0) : Requête partie sur le câble
+    loop Transfert des octets du fichier
+        Browser-->>Http: HttpEventType.UploadProgress (1) { loaded: 1.2Mo, total: 3.6Mo }
+        Http-->>UI: next(event)
+        UI->>UI: uploadProgress.set(33%) -> Mise à jour du DOM
+        Browser-->>Http: HttpEventType.UploadProgress (1) { loaded: 2.7Mo, total: 3.6Mo }
+        Http-->>UI: next(event)
+        UI->>UI: uploadProgress.set(75%) -> Mise à jour du DOM
+    end
+    Browser-->>Http: HttpEventType.ResponseHeader (2) : En-têtes HTTP 201 reçus
+    Server-->>Browser: Réponse JSON complète { id: "...", title: "..." }
+    Browser-->>Http: HttpEventType.Response (4) { status: 201, body: Track }
+    Http-->>UI: next(event)
+    UI->>UI: uploading.set(false), uploadProgress.set(null)
+    UI->>UI: uploadSuccess.set("Importé avec succès"), reset form, load()
+    Http-->>UI: complete() : Fin du flux Observable
+```
+
+---
+
+### 3.3. Réponse Fondamentale à la Question du Sujet
+
+> **Question du sujet** : *« Expliquer pourquoi un upload avec progression ne se traite pas exactement comme une requête HTTP qui émet uniquement une réponse finale. »*
+
+1. **Nombre d'émissions de l'Observable RxJS** :
+   - **Requête classique (`observe: 'body'`)** : L'Observable émet **une seule et unique fois**. Dès que le serveur a fini de répondre, Angular désérialise le JSON, émet l'objet résultat dans le callback `next(data)`, puis émet immédiatement `complete()`.
+   - **Requête avec progression (`observe: 'events'`, `reportProgress: true`)** : L'Observable émet **une série continue d'événements intermédiaires** (`HttpEvent<T>`). Au lieu d'une valeur unique, le callback `next(event)` est déclenché de nombreuses fois pendant toute la durée du téléversement au fur et à mesure que les paquets TCP sont transmis par la carte réseau.
+
+2. **Différenciation obligatoire par `event.type`** :
+   Dans une requête standard, `data` contient directement le modèle (`Track`).  
+   Dans une requête avec progression, `event` peut être de plusieurs natures :
+   - `HttpEventType.Sent (0)` : La connexion est établie.
+   - `HttpEventType.UploadProgress (1)` : Le fichier est en train d'être envoyé. À ce stade, `event.body` n'existe pas encore ! L'application extrait `event.loaded` et `event.total` pour calculer :
+     $$\text{Pourcentage} = \text{Math.round}\left(\frac{\text{event.loaded}}{\text{event.total}} \times 100\right)$$
+   - `HttpEventType.Response (4)` : Le serveur a terminé de traiter le fichier et renvoie la réponse finale. C'est **uniquement à ce moment précis** que `event.body` devient disponible et contient les métadonnées de la piste créée.
+
+3. **Conséquence ergonomique (UX)** :
+   Traiter la progression permet d'offrir à l'utilisateur un retour visuel en temps réel sur les fichiers volumineux (ex: 20 Mo d'audio), évitant le sentiment d'application « gelée » ou bloquée.
+
+---
+
+### 3.4. Checkpoint Network de la Progression d'Upload
+
+Pour valider l'évaluation auprès de l'enseignant :
+
+1. **Requête HTTP** :
+   - **Méthode** : `POST http://localhost:4200/api/tracks`
+   - **En-têtes** :
+     - `Authorization: Bearer <token_jwt>` (injecté automatiquement par `authInterceptor`)
+     - `Content-Type: multipart/form-data; boundary=----WebKitFormBoundary...`
+   - **Corps envoyé** :
+     - Champ `audio` : flux binaire du fichier audio (`song1.mp3`)
+     - Champ `title` : `"Solo Blues en La mineur"`
+2. **Événements observés** :
+   - Série d'événements `UploadProgress` avec progression croissante du ratio `loaded / total` de 0% à 100%.
+   - Statut HTTP final : `201 Created`.
+   - Corps de réponse :
+     ```json
+     {
+       "id": "6ac795007d41eb21f099faa8",
+       "ownerId": "6ac6f5c8...",
+       "title": "Solo Blues en La mineur",
+       "originalName": "song1.mp3",
+       "mimeType": "audio/mpeg",
+       "size": 3605337,
+       "createdAt": "2026-10-14T12:00:00.000Z"
+     }
+     ```
+3. **Comportement UI final** :
+   - Disparition de la barre de progression, affichage de l'alerte verte et du toast `MatSnackBar`.
+   - Remise à zéro des champs et insertion immédiate du nouveau morceau en première position de la liste.
+

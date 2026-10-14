@@ -13,75 +13,91 @@
         Importer un morceau
       </h2>
 
-      <label>
-        Titre du morceau
-        <input [formControl]="title" placeholder="Ex : Solo Blues en La mineur (optionnel)" />
-      </label>
+      <!-- Contrôles du formulaire verrouillés pendant l'envoi pour empêcher toute seconde soumission -->
+      <fieldset [disabled]="uploading()" class="upload-fieldset">
+        <label>
+          Titre du morceau
+          <input [formControl]="title" placeholder="Ex : Solo Blues en La mineur (optionnel)" />
+        </label>
 
-      <label>
-        Artiste / Groupe (optionnel)
-        <input [formControl]="artist" placeholder="Ex : B.B. King, Gary Moore..." />
-      </label>
+        <label>
+          Artiste / Groupe (optionnel)
+          <input [formControl]="artist" placeholder="Ex : B.B. King, Gary Moore..." />
+        </label>
 
-      <label>
-        Fichier audio (max 25 Mo)
-        <input #fileInput type="file" accept="audio/*" (change)="choose($event)" />
-      </label>
+        <label>
+          Fichier audio (max 25 Mo)
+          <input #fileInput type="file" accept="audio/*" (change)="choose($event)" />
+        </label>
 
-      <!-- Option avancée : Image de couverture (upload ou recherche web) -->
-      <div class="cover-field">
-        <span class="cover-label">Image de couverture (optionnel, max 5 Mo)</span>
-        <div class="cover-inputs">
-          <input #coverInput type="file" accept="image/jpeg,image/png,image/webp" (change)="chooseCover($event)" class="cover-file-input" />
-          <button type="button" class="btn-web-cover" (click)="searchWebCover()" [disabled]="searchingCovers()" title="Rechercher une pochette sur le Web">
-            <mat-icon>{{ searchingCovers() ? 'hourglass_top' : 'image_search' }}</mat-icon>
-            <span>{{ searchingCovers() ? 'Recherche…' : 'Chercher sur le Web' }}</span>
-          </button>
-        </div>
-
-        @if (coverPreview()) {
-        <div class="cover-preview-box">
-          <img [src]="coverPreview()" alt="Aperçu de la pochette sélectionnée" class="cover-preview-img" />
-          <div class="cover-preview-info">
-            <span>Pochette sélectionnée</span>
-            <button type="button" class="btn-remove-cover" (click)="removeCover(coverInput)">Retirer</button>
-          </div>
-        </div>
-        }
-
-        @if (coverSuggestions().length > 0) {
-        <div class="cover-suggestions">
-          <p class="suggestions-title">Suggestions trouvées sur le Web (cliquez pour sélectionner) :</p>
-          <div class="suggestions-grid">
-            @for (s of coverSuggestions(); track s.coverUrl) {
-            <button type="button" class="suggestion-card" (click)="selectSuggestion(s, coverInput)" [title]="s.artist + ' - ' + s.title">
-              <img [src]="s.coverUrl" [alt]="s.title" class="suggestion-img" />
-              <span class="suggestion-caption">{{ s.title }}</span>
+        <!-- Option avancée : Image de couverture (upload ou recherche web) -->
+        <div class="cover-field">
+          <span class="cover-label">Image de couverture (optionnel, max 5 Mo)</span>
+          <div class="cover-inputs">
+            <input #coverInput type="file" accept="image/jpeg,image/png,image/webp" (change)="chooseCover($event)" class="cover-file-input" />
+            <button type="button" class="btn-web-cover" (click)="searchWebCover()" [disabled]="searchingCovers() || uploading()" title="Rechercher une pochette sur le Web">
+              <mat-icon>{{ searchingCovers() ? 'hourglass_top' : 'image_search' }}</mat-icon>
+              <span>{{ searchingCovers() ? 'Recherche…' : 'Chercher sur le Web' }}</span>
             </button>
-            }
           </div>
-        </div>
-        }
-      </div>
 
-      @if (uploadProgress() !== null) {
+          @if (coverPreview()) {
+          <div class="cover-preview-box">
+            <img [src]="coverPreview()" alt="Aperçu de la pochette sélectionnée" class="cover-preview-img" />
+            <div class="cover-preview-info">
+              <span>Pochette sélectionnée</span>
+              <button type="button" class="btn-remove-cover" (click)="removeCover(coverInput)" [disabled]="uploading()">Retirer</button>
+            </div>
+          </div>
+          }
+
+          @if (coverSuggestions().length > 0) {
+          <div class="cover-suggestions">
+            <p class="suggestions-title">Suggestions trouvées sur le Web (cliquez pour sélectionner) :</p>
+            <div class="suggestions-grid">
+              @for (s of coverSuggestions(); track s.coverUrl) {
+              <button type="button" class="suggestion-card" (click)="selectSuggestion(s, coverInput)" [disabled]="uploading()" [title]="s.artist + ' - ' + s.title">
+                <img [src]="s.coverUrl" [alt]="s.title" class="suggestion-img" />
+                <span class="suggestion-caption">{{ s.title }}</span>
+              </button>
+              }
+            </div>
+          </div>
+          }
+        </div>
+      </fieldset>
+
+      <!-- États d'upload : En cours avec pourcentage, Réussite, ou Échec -->
+      @if (uploading()) {
       <div class="progress-wrap" aria-label="Progression du téléversement">
-        <progress [value]="uploadProgress()" max="100"></progress>
-        <span class="progress-value">{{ uploadProgress() }}%</span>
+        <div class="progress-header">
+          <span class="progress-label">
+            <mat-icon class="spin-icon">sync</mat-icon>
+            {{ (uploadProgress() ?? 0) >= 100 ? 'Finalisation par le serveur…' : 'Téléversement en cours…' }}
+          </span>
+          <span class="progress-value">{{ uploadProgress() ?? 0 }}%</span>
+        </div>
+        <progress [value]="uploadProgress() ?? 0" max="100"></progress>
       </div>
       }
 
       @if (uploadError()) {
-      <p class="error" role="alert">{{ uploadError() }}</p>
+      <p class="error" role="alert">
+        <mat-icon class="status-inline-icon">error_outline</mat-icon>
+        <span>{{ uploadError() }}</span>
+      </p>
       }
 
       @if (uploadSuccess()) {
-      <p class="success" role="status">{{ uploadSuccess() }}</p>
+      <p class="success" role="status">
+        <mat-icon class="status-inline-icon">check_circle</mat-icon>
+        <span>{{ uploadSuccess() }}</span>
+      </p>
       }
 
       <button type="button" (click)="upload(fileInput, coverInput)" [disabled]="!file || uploading()" class="btn-primary">
         <mat-icon>{{ uploading() ? 'hourglass_top' : 'upload' }}</mat-icon>
-        <span>{{ uploading() ? 'Envoi en cours…' : 'Envoyer le fichier' }}</span>
+        <span>{{ uploading() ? 'Téléversement (' + (uploadProgress() ?? 0) + '%)…' : 'Envoyer le fichier' }}</span>
       </button>
     </article>
 

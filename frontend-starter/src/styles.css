@@ -187,3 +187,26 @@ audio {
     margin-bottom: 1rem;
   }
 }
+
+/* Positionnement et visibilité des notifications MatSnackBar */
+.mat-mdc-snack-bar-container {
+  margin-top: 1.5rem !important;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.25) !important;
+}
+
+.mat-mdc-snack-bar-container .mdc-snackbar__surface {
+  background-color: #123d32 !important;
+  color: #ffffff !important;
+  border: 1px solid #276c57 !important;
+  border-radius: 10px !important;
+  font-size: 0.925rem !important;
+}
+
+.mat-mdc-snack-bar-container .mdc-snackbar__label {
+  color: #ffffff !important;
+}
+
+.mat-mdc-snack-bar-container .mat-mdc-button {
+  color: #5ce1b6 !important;
+  font-weight: 700 !important;
+}

@@ -46,6 +46,7 @@ export class TrackService {
     }
     return this.http.post<Track>('/api/tracks', body, {
       reportProgress: true,
+      reportUploadProgress: true,
       observe: 'events',
     });
   }

@@ -273,25 +273,39 @@ export class TracksPageComponent implements OnDestroy {
     if (!this.file || this.uploading()) return;
 
     this.uploading.set(true);
-    this.uploadProgress.set(0);
+    this.uploadProgress.set(5);
     this.uploadError.set('');
     this.uploadSuccess.set('');
 
     const titleToSend = this.title.value.trim() || this.file.name;
     const coverUrlToSend = this.coverUrl.value.trim();
     const artistToSend = this.artist.value.trim();
+    const fileSize = this.file.size;
 
     this.service.upload(this.file, titleToSend, this.coverFile, coverUrlToSend, artistToSend).subscribe({
       next: (event) => {
-        if (event.type === HttpEventType.UploadProgress && event.total) {
-          const percent = Math.round((100 * event.loaded) / event.total);
+        if (event.type === HttpEventType.Sent) {
+          // Début de l'envoi de la requête réseau
+          this.uploadProgress.set(15);
+        } else if (event.type === HttpEventType.UploadProgress) {
+          // Calcul du pourcentage : utilise event.total si calculable, sinon la taille réelle du fichier
+          const total = event.total || fileSize || 1;
+          const rawPercent = Math.round((100 * event.loaded) / total);
+          // Fait progresser de 15% à 99% pendant le flux montant
+          const percent = Math.min(99, Math.max(15, rawPercent));
           this.uploadProgress.set(percent);
+          console.debug(`[TracksPage] Progression upload : ${percent}% (${event.loaded}/${total} octets)`);
+        } else if (event.type === HttpEventType.ResponseHeader) {
+          this.uploadProgress.set(100);
         } else if (event.type === HttpEventType.Response) {
           const track = event.body;
+          this.uploadProgress.set(100);
           console.debug('[TracksPage] Piste envoyée avec succès :', track?.id);
           this.uploading.set(false);
           this.uploadProgress.set(null);
-          this.uploadSuccess.set(`« ${track?.title ?? titleToSend} » a été importé avec succès !`);
+          const successMsg = `« ${track?.title ?? titleToSend} » a été importé avec succès !`;
+          this.uploadSuccess.set(successMsg);
+          this.showNotification(successMsg, 3500);
           this.title.setValue('');
           this.artist.setValue('');
           this.coverUrl.setValue('');
@@ -306,11 +320,13 @@ export class TracksPageComponent implements OnDestroy {
           this.load();
         }
       },
-      error: (error: { error?: { message?: string } }) => {
+      error: (error: { status?: number; error?: { message?: string } }) => {
         console.error('[TracksPage] Envoi impossible', error);
         this.uploading.set(false);
         this.uploadProgress.set(null);
-        this.uploadError.set(error.error?.message ?? "Une erreur est survenue lors de l'envoi du fichier.");
+        const errMsg = error.error?.message ?? "Une erreur est survenue lors de l'envoi du fichier.";
+        this.uploadError.set(errMsg);
+        this.showNotification(errMsg, 4500);
       },
     });
   }
@@ -348,11 +364,7 @@ export class TracksPageComponent implements OnDestroy {
         console.debug('[TracksPage] Morceau supprimé avec succès :', track.id);
         this.deletingId.set(null);
 
-        this.snackBar.open(`Le morceau « ${track.title} » a été supprimé.`, 'Fermer', {
-          duration: 3500,
-          horizontalPosition: 'end',
-          verticalPosition: 'bottom',
-        });
+        this.showNotification(`Le morceau « ${track.title} » a été supprimé.`, 3500);
 
         // Nettoyage immédiat du lecteur audio si la piste en cours est celle supprimée
         if (this.currentTrack()?.id === track.id) {
@@ -375,28 +387,24 @@ export class TracksPageComponent implements OnDestroy {
 
         // Gestion du cas où la piste n'existe plus (404) ou n'appartient pas à l'utilisateur (403/404)
         if (error.status === 404) {
-          this.snackBar.open(
-            `Le morceau « ${track.title} » n'existe plus ou a déjà été supprimé.`,
-            'Fermer',
-            { duration: 4000, horizontalPosition: 'end', verticalPosition: 'bottom' },
-          );
-          // Rafraîchir pour retirer la carte fantôme de l'écran
+          this.showNotification(`Le morceau « ${track.title} » n'existe plus ou a déjà été supprimé.`, 4500);
           this.load();
         } else if (error.status === 403) {
-          this.snackBar.open(
-            `Vous n'avez pas l'autorisation de supprimer le morceau « ${track.title} ».`,
-            'Fermer',
-            { duration: 4000, horizontalPosition: 'end', verticalPosition: 'bottom' },
-          );
+          this.showNotification(`Vous n'avez pas l'autorisation de supprimer le morceau « ${track.title} ».`, 4500);
         } else {
           const msg = error.error?.message ?? `Impossible de supprimer « ${track.title} »`;
-          this.snackBar.open(msg, 'Fermer', {
-            duration: 4000,
-            horizontalPosition: 'end',
-            verticalPosition: 'bottom',
-          });
+          this.showNotification(msg, 4500);
         }
       },
+    });
+  }
+
+  /** Affiche une notification MatSnackBar bien visible, centrée en haut de l'écran. */
+  private showNotification(message: string, duration = 3500): void {
+    this.snackBar.open(message, 'Fermer', {
+      duration,
+      horizontalPosition: 'center',
+      verticalPosition: 'top',
     });
   }
 
