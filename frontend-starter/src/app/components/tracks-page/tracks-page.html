@@ -186,11 +186,11 @@
               type="button"
               class="btn-delete"
               (click)="deleteTrack(track)"
-              [disabled]="deletingId() === track.id"
+              [disabled]="deletingId() !== null"
               [attr.aria-label]="'Supprimer le morceau ' + track.title"
               title="Supprimer définitivement ce morceau"
             >
-              <mat-icon>delete_outline</mat-icon>
+              <mat-icon>{{ deletingId() === track.id ? 'hourglass_empty' : 'delete_outline' }}</mat-icon>
             </button>
           </div>
         </article>

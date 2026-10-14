@@ -3,6 +3,7 @@ import { FormControl, ReactiveFormsModule } from '@angular/forms';
 import { HttpEventType } from '@angular/common/http';
 import { MatPaginatorIntl, MatPaginatorModule, PageEvent } from '@angular/material/paginator';
 import { MatIconModule } from '@angular/material/icon';
+import { MatSnackBar, MatSnackBarModule } from '@angular/material/snack-bar';
 import { debounceTime, distinctUntilChanged, Subscription } from 'rxjs';
 import { CoverSuggestion, Track } from '../../shared/models/track.model';
 import { TrackService } from '../../shared/services/track.service';
@@ -44,13 +45,14 @@ export function getFrenchPaginatorIntl(): MatPaginatorIntl {
 }
 
 @Component({
-  imports: [ReactiveFormsModule, MatPaginatorModule, MatIconModule],
+  imports: [ReactiveFormsModule, MatPaginatorModule, MatIconModule, MatSnackBarModule],
   providers: [{ provide: MatPaginatorIntl, useFactory: getFrenchPaginatorIntl }],
   templateUrl: './tracks-page.html',
   styleUrl: './tracks-page.css',
 })
 export class TracksPageComponent implements OnDestroy {
   private readonly service = inject(TrackService);
+  private readonly snackBar = inject(MatSnackBar);
   private readonly searchSub: Subscription;
 
   // Pagination et bibliothèque
@@ -335,7 +337,7 @@ export class TracksPageComponent implements OnDestroy {
   }
 
   deleteTrack(track: Track): void {
-    const confirmed = window.confirm(`Voulez-vous vraiment supprimer le morceau « ${track.title} » ?`);
+    const confirmed = window.confirm(`Voulez-vous vraiment supprimer définitivement le morceau « ${track.title} » ?`);
     if (!confirmed) return;
 
     this.deletingId.set(track.id);
@@ -345,18 +347,55 @@ export class TracksPageComponent implements OnDestroy {
       next: () => {
         console.debug('[TracksPage] Morceau supprimé avec succès :', track.id);
         this.deletingId.set(null);
+
+        this.snackBar.open(`Le morceau « ${track.title} » a été supprimé.`, 'Fermer', {
+          duration: 3500,
+          horizontalPosition: 'end',
+          verticalPosition: 'bottom',
+        });
+
+        // Nettoyage immédiat du lecteur audio si la piste en cours est celle supprimée
         if (this.currentTrack()?.id === track.id) {
           const prev = this.audioUrl();
           if (prev) URL.revokeObjectURL(prev);
           this.audioUrl.set('');
           this.currentTrack.set(null);
         }
+
+        // Si c'était le seul élément d'une page > 1, reculer d'une page
+        if (this.tracks().length === 1 && this.page() > 1) {
+          this.page.set(this.page() - 1);
+        }
+
         this.load();
       },
-      error: (error: { error?: { message?: string } }) => {
+      error: (error: { status?: number; error?: { message?: string } }) => {
         console.error('[TracksPage] Suppression impossible', error);
         this.deletingId.set(null);
-        this.error.set(error.error?.message ?? `Impossible de supprimer « ${track.title} »`);
+
+        // Gestion du cas où la piste n'existe plus (404) ou n'appartient pas à l'utilisateur (403/404)
+        if (error.status === 404) {
+          this.snackBar.open(
+            `Le morceau « ${track.title} » n'existe plus ou a déjà été supprimé.`,
+            'Fermer',
+            { duration: 4000, horizontalPosition: 'end', verticalPosition: 'bottom' },
+          );
+          // Rafraîchir pour retirer la carte fantôme de l'écran
+          this.load();
+        } else if (error.status === 403) {
+          this.snackBar.open(
+            `Vous n'avez pas l'autorisation de supprimer le morceau « ${track.title} ».`,
+            'Fermer',
+            { duration: 4000, horizontalPosition: 'end', verticalPosition: 'bottom' },
+          );
+        } else {
+          const msg = error.error?.message ?? `Impossible de supprimer « ${track.title} »`;
+          this.snackBar.open(msg, 'Fermer', {
+            duration: 4000,
+            horizontalPosition: 'end',
+            verticalPosition: 'bottom',
+          });
+        }
       },
     });
   }
