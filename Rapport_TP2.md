@@ -49,13 +49,14 @@ Conformément à la section **Prérequis** de [`SUJET_ETUDIANT_TP2.md`](SUJET_ET
 
 - **Vérifications réalisées par le binôme** :
   - **Compilation sans erreur** : Validation de `ng build` (`cmd /c "npm run build"`) compilant l'application avec un code de sortie 0 et 0 erreur.
-  - **Contrôle des bornes de pagination** :
-    - Sur la page 1 : le bouton précédent du paginator est grisé/désactivé.
-    - Sur la dernière page : le bouton suivant du paginator est grisé/désactivé.
+  - **Contrôle des bornes de pagination et navigation rapide** :
+    - Sur la page 1 : le bouton précédent et le bouton première page (`|<<`) du paginator sont grisés/désactivés.
+    - Sur la dernière page : le bouton suivant et le bouton dernière page (`>>|`) du paginator sont grisés/désactivés.
+    - L'activation de `[showFirstLastButtons]="true"` permet le saut direct vers la première ou dernière page avec libellés français natifs (*« Première page »*, *« Dernière page »*).
     - Pendant une requête en cours : le paginator est désactivé (`[disabled]="loading()"`).
   - **Requête HTTP à chaque changement** : Inspection de l'onglet Network des DevTools : chaque clic sur les flèches du `<mat-paginator>` émet une nouvelle requête HTTP réelle `GET /api/tracks?page=X&limit=Y` avec l'en-tête `Authorization: Bearer <token>`.
   - **Affichage de l'état vide** : Lorsqu'un utilisateur sans pistes se connecte, le bloc `@empty` affiche le message informatif *« Aucune piste dans votre bibliothèque. »*.
-  - **Vérification de l'internationalisation** : Les libellés du composant Material sont bien traduits en français (*« Morceaux par page : »*, *« Page suivante »*, *« 1 – 5 sur X »*).
+  - **Vérification de l'internationalisation** : Les libellés du composant Material sont bien traduits en français (*« Morceaux par page : »*, *« Page suivante »*, *« Page précédente »*, *« Première page »*, *« Dernière page »*, *« 1 – 5 sur X »*).
 
 - **Erreurs ou propositions rejetées** :
   - *Erreur technique de dépendance npm résolue (`@angular/animations`)* : Lors de l'installation de `@angular/material`, l'ajout initial de `provideAnimationsAsync()` dans `main.ts` a provoqué une rupture de compilation à cause d'un conflit de versions de peer-dependencies npm (Angular 22 vs packages d'animations v20). L'agent a diagnostiqué le problème et retiré cet import superflu : le `MatPaginator` fonctionne parfaitement sans le module d'animation lourd et le build compile à 100%.
