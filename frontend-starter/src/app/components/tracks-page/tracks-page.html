@@ -228,6 +228,7 @@
         [pageSize]="limit()"
         [pageIndex]="page() - 1"
         [pageSizeOptions]="[5, 10, 20]"
+        [showFirstLastButtons]="true"
         [disabled]="loading()"
         (page)="onPageChange($event)"
         aria-label="Sélectionner la page"

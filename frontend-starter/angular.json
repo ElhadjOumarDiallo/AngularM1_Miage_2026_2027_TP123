@@ -20,7 +20,15 @@
                         "styles": [
                             "src/styles.css"
                         ]
-                    }
+                    },
+                    "configurations": {
+                        "development": {
+                            "optimization": false,
+                            "extractLicenses": false,
+                            "sourceMap": true
+                        }
+                    },
+                    "defaultConfiguration": "development"
                 },
                 "serve": {
                     "builder": "@angular/build:dev-server",
@@ -32,7 +40,10 @@
                     "defaultConfiguration": "development"
                 },
                 "test": {
-                    "builder": "@angular/build:unit-test"
+                    "builder": "@angular/build:unit-test",
+                    "options": {
+                        "buildTarget": "gpc:build"
+                    }
                 }
             }
         }
