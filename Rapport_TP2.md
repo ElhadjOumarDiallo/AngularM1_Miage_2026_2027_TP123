@@ -35,7 +35,7 @@ Conformément à la section **Prérequis** de [`SUJET_ETUDIANT_TP2.md`](SUJET_ET
 
 - **Prompt principal** :
   > *« pour le tp2 vérifie que tout ce qui est cité dans les prérequis est respecté(dans sujet etudiant tp2), si c'est le cas : attaque toi en détail à ce qui est cité dans la mission 2 Bibliothèque paginée avec une production attendue "pages serveur fonctionnelles" et crée un fichier de rapport pour le tp2 et met le à jour à chaque étape comme pour le rapport tp1. »*
-  *Précisions et vérification de conformité stricte apportées par le binôme :*
+  *Précisions et vérification de conformité stricte :*
   > *« D'abord sur le lien sur la mission 2, on retrouve le mat-paginator [...] revois bien la mission, lis en détails, modifie comme il se doit et met à jour le rapport tp2 »*
   > *« est ce que tu as suivi strictement à la lettre le sujet comme cette partie là : Afficher les résultats avec @for, l’état vide avec @empty et le chargement avec @if. Ajouter les boutons « Précédent » et « Suivant », désactivés aux bornes. Après chaque changement de page, effectuer une nouvelle requête HTTP. Il est interdit de récupérer toutes les pistes puis de les découper localement dans Angular. ? »*
 
@@ -47,7 +47,7 @@ Conformément à la section **Prérequis** de [`SUJET_ETUDIANT_TP2.md`](SUJET_ET
   5. Configurer la synchronisation bidirectionnelle des signaux, la conversion d'index 0-based/1-based et la traduction française complète via `MatPaginatorIntl`.
   6. Valider le build de production avec `ng build` et tester le déclenchement de nouvelles requêtes HTTP à chaque navigation de page.
 
-- **Vérifications réalisées par le binôme** :
+- **Vérifications réalisées** :
   - **Compilation sans erreur** : Validation de `ng build` (`cmd /c "npm run build"`) compilant l'application avec un code de sortie 0 et 0 erreur.
   - **Contrôle des bornes de pagination et navigation rapide** :
     - Sur la page 1 : le bouton précédent et le bouton première page (`|<<`) du paginator sont grisés/désactivés.
@@ -76,7 +76,7 @@ Conformément à la section **Prérequis** de [`SUJET_ETUDIANT_TP2.md`](SUJET_ET
   - Traces des requêtes HTTP paginées `GET /api/tracks?page=1&limit=5` observables dans l'onglet Network.
   - Comportement dynamique des boutons de pagination désactivés aux extrémités.
 
-- **Ce que chaque membre sait maintenant expliquer sans l'agent** :
+- **Notions maîtrisées sans l'agent** :
   - Pourquoi la pagination serveur est indispensable en production pour la scalabilité mémoire et l'économie de bande passante réseau.
   - Comment manipuler les Signals pour synchroniser l'état réactif de l'UI (`loading`, `page`, `pages`, `tracks`).
   - Comment gérer l'écart d'indexation entre une bibliothèque graphique tierce (base 0 pour Angular Material) et une API REST backend (base 1 pour Express).
@@ -186,7 +186,7 @@ Pour prouver le bon fonctionnement de la pagination serveur lors de votre évalu
   6. Compléter le lecteur audio : signal `currentTrack` (morceau en cours), indicateur `audioLoading`, message `audioError`, et libération des ressources mémoire via `ngOnDestroy()`.
   7. Répondre de manière exhaustive aux 5 questions théoriques sur la mémoire, le buffering et le streaming.
 
-- **Vérifications réalisées par le binôme** :
+- **Vérifications réalisées** :
   - **Validation pré-upload locale** : Sélection d'un fichier non audio ou dépassant 25 Mo -> affichage immédiat d'une erreur inline explicite dans le formulaire et réinitialisation de la sélection avant toute requête HTTP.
   - **Envoi réussi d'un morceau** : Sélection de `song1.mp3` (3,6 Mo) depuis [`frontend-starter/fichiers-audio-de-test/`](frontend-starter/fichiers-audio-de-test/) :
     - Le bouton passe en *« Envoi en cours… »* et se désactive.
@@ -223,7 +223,7 @@ Pour prouver le bon fonctionnement de la pagination serveur lors de votre évalu
   - Requête de lecture `GET /api/tracks/:id/audio` recevant le `Blob` audio (`HTTP 200`, `Content-Type: audio/mpeg`).
   - Piste écoutable dans le lecteur HTML5 intégré.
 
-- **Ce que chaque membre sait maintenant expliquer sans l'agent** :
+- **Notions maîtrisées sans l'agent** :
   - Pourquoi `HttpClient` et `URL.createObjectURL` sont obligatoires pour lire un flux média protégé par JWT.
   - Comment fonctionne `FormData` pour transférer des fichiers binaires avec des champs textes.
   - Pourquoi `URL.revokeObjectURL()` est indispensable pour éviter les fuites de mémoire vive.
@@ -372,7 +372,7 @@ Balise <audio [src]="audioUrl()" controls autoplay> (Lecture immédiate)
 - **Objectif** :
   Présenter les morceaux sous forme de cards responsives et accessibles selon les normes WCAG AA en respectant rigoureusement la charte graphique sobre verte émeraude du projet (`styles.css`), intégrer des icônes professionnelles (`MatIconModule`), étendre la recherche pour filtrer sur **l'intégralité des morceaux en base de données** (et non plus seulement sur la page active), synchroniser le paginator Material avec le total réel retourné par le serveur, et implémenter l'ensemble des 5 améliorations facultatives.
 
-- **Prompts successifs du binôme** :
+- **Prompts successifs** :
   1. *« relis le fichier du sujet et implemente la seconde partie de la mission3 : Cards, erreurs et vérification Network avec la production attendue qui est interface présentable et preuves. N'oublie de vérifier que tout est fait et qu'on a rien oublié sur les parties précédentes, réponds aux questions posées, et ajoute les améliorations facultatives aussi. Met à jour le rapport et vérifie que tout y est bien »*
   2. *« utilise des icônes pour un affichage plus propre, adapte la recherche pour qu'il ne cherche pas uniquement sur la page actuel mais dans tous les tracks met à jour le rapport »*
   3. *« vers la fin du sujet de tp2 il y a cette partie : AVANCÉ — Image de couverture, implémente bien ce qui est décrit et respecte à la lettre tout ce qui y est noté et n'oublie pas de mettre à jour le rapport »*
@@ -388,7 +388,7 @@ Balise <audio [src]="audioUrl()" controls autoplay> (Lecture immédiate)
   5. **Améliorations facultatives conservées** : Formatage lisible (`formatSize`, `formatDate`), barre de progression d'upload avec pourcentage, suppression sécurisée via `DELETE /api/tracks/:id` avec confirmation, et rafraîchissement automatique.
   6. **Option avancée : Image de couverture complète** : Implémenter l'upload d'image locale ($\le 5\text{ Mo}$), la recherche web automatique de pochettes d'albums (iTunes Search API), le fallback accessible et le nettoyage disque coordonné.
 
-- **Vérifications réalisées par le binôme** :
+- **Vérifications réalisées** :
   - **Recherche globale multi-pages validée** :
     - Saisir un mot-clé (ex: « song » ou « Blues ») interroge le backend avec `GET /api/tracks?page=1&limit=5&search=...`.
     - Les résultats trouvés proviennent de l'ensemble de la base de données MongoDB de l'utilisateur, et pas seulement des 5 pistes initialement chargées sur la page 1.
@@ -399,14 +399,14 @@ Balise <audio [src]="audioUrl()" controls autoplay> (Lecture immédiate)
   - **Option avancée Image de couverture** : Sélection d'une image locale avec prévisualisation immédiate, recherche de pochette web par titre et affichage de la vignette 52x52px sur la carte et dans le lecteur.
 
 - **Erreurs ou propositions rejetées (Point Clé du Rapport IA)** :
-  - *Proposition rejetée par le binôme : Surcharge CSS et composants graphiques non adaptés* :
-    - **Justification explicite du rejet par le binôme** : Le binôme a rejeté une proposition initiale où l'agent avait généré un design trop dense, avec des sous-cartes blanches imbriquées, des bordures en pointillés et des couleurs qui dénotaient avec le reste de l'application.
+  - *Proposition rejetée : Surcharge CSS et composants graphiques non adaptés* :
+    - **Justification explicite du rejet** : Rejet d'une proposition initiale où l'agent avait généré un design trop dense, avec des sous-cartes blanches imbriquées, des bordures en pointillés et des couleurs qui dénotaient avec le reste de l'application.
     - **Correction apportée** : Suppression intégrale des éléments hétérogènes. Remplacement par des lignes de cartes plates discrètes (`#fafcfb`, bordure `#e1ebe7`, focus émeraude `#1d755e`), enrichies d'icônes Material standard.
   - *Limitation rejetée : Filtrage local restreint à la page en cours* :
     - **Motif du rejet** : La première version du filtre utilisait un signal dérivé `computed(() => this.tracks().filter(...))`. Ce filtre était trompeur car il n'inspectait que les 5 pistes de la page active au lieu d'explorer l'ensemble de la bibliothèque.
     - **Correction apportée** : Délégation complète du filtre au serveur backend via `req.query.search` et requête MongoDB globale `Track.find(filter)`.
   - *Choix d'architecture : Persistance physique complète de la pochette plutôt qu'une simple maquette volatile* :
-    - **Contexte** : Le sujet demandait d'identifier les modifications d'API/données requises pour la pochette. Plutôt que de limiter l'option avancée à un champ éphémère ou purement simulé dans le navigateur, le binôme et l'agent ont choisi d'étendre proprement le schéma Mongoose et le middleware Multer pour gérer le stockage binaire sur disque, la validation MIME et le nettoyage coordonné lors de la suppression.
+    - **Contexte** : Le sujet demandait d'identifier les modifications d'API/données requises pour la pochette. Plutôt que de limiter l'option avancée à un champ éphémère ou purement simulé dans le navigateur, le choix s'est porté sur une extension propre du schéma Mongoose et du middleware Multer pour gérer le stockage binaire sur disque, la validation MIME et le nettoyage coordonné lors de la suppression.
 
 - **Fichiers effectivement modifiés** :
   - [`backend/src/models/Track.js`](backend/src/models/Track.js) : Ajout des champs `coverUrl`, `coverStoredName` et `artist`.
@@ -426,7 +426,7 @@ Balise <audio [src]="audioUrl()" controls autoplay> (Lecture immédiate)
   - Validation du rafraîchissement automatique après suppression (traces HTTP `DELETE 204` -> `GET 200` observées).
   - Intégration fluide des icônes, des vignettes de pochette et du paginator.
 
-- **Ce que chaque membre sait maintenant expliquer sans l'agent** :
+- **Notions maîtrisées sans l'agent** :
   - Pourquoi une recherche globale en bibliothèque paginée doit impérativement s'exécuter côté serveur (MongoDB `$regex`) pour ne pas être limitée aux seuls items de la page courante.
   - Comment gérer un pipeline RxJS `valueChanges` avec `debounceTime` pour éviter de spammer le serveur à chaque frappe au clavier.
   - Comment harmoniser les composants Angular Material (`mat-paginator`, `mat-icon`) avec une charte graphique CSS sur mesure sans briser l'identité visuelle de l'application.

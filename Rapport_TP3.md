@@ -9,7 +9,7 @@ Conformément au déroulement conseillé (0:00–0:15) du sujet [`SUJET_ETUDIANT
 
 ### 1.1. État des Lieux et Manques Identifiés
 
-| Domaine | État existant dans le projet | Manques identifiés par le binôme (Attentes TP3) |
+| Domaine | État existant dans le projet | Manques identifiés (Attentes TP3) |
 |---|---|---|
 | **Tests Frontend** | Aucun fichier de test (`.spec.ts`) présent dans `frontend-starter/src/`. | Absence totale de tests unitaires et d'intégration sur les services, les composants, l'intercepteur JWT et le guard. |
 | **Tests Backend** | Tests minimaux dans `backend/test/api.test.js` (`/api/health` et schémas Mongoose). | Aucun test de sécurité rejetant les requêtes non authentifiées (`401`), aucun test de suppression (`DELETE`) ni de validation de fichiers Multer. |
@@ -42,7 +42,7 @@ Conformément au déroulement conseillé (0:00–0:15) du sujet [`SUJET_ETUDIANT
   5. Mettre à jour [`tracks-page.html`](frontend-starter/src/app/components/tracks-page/tracks-page.html) avec icône dynamique `hourglass_empty` pendant la suppression et verrouillage de sécurité.
   6. Valider la compilation via `npm run build` et documenter les traces réseau.
 
-- **Vérifications réalisées par le binôme** :  
+- **Vérifications réalisées** :  
   - **Compilation sans erreur** : Exécution de `cmd /c "npm run build"` compilant l'application en 5.8s avec un code de sortie 0 et 0 erreur TypeScript/Angular.
   - **Confirmation utilisateur** : Clic sur le bouton poubelle d'une piste $\rightarrow$ la boîte de dialogue modale s'ouvre : *« Voulez-vous vraiment supprimer définitivement le morceau « ... » ? »*. Si l'utilisateur clique sur « Annuler », aucune requête HTTP n'est envoyée.
   - **Verrouillage anti-double clic** : Dès confirmation, le bouton de la piste affiche l'icône de sablier `hourglass_empty` et tous les boutons de suppression de la liste sont désactivés pendant l'appel réseau.
@@ -73,7 +73,7 @@ Conformément au déroulement conseillé (0:00–0:15) du sujet [`SUJET_ETUDIANT
     - `GET http://localhost:4200/api/tracks?page=1&limit=5` $\rightarrow$ `HTTP 200 OK` (liste rafraîchie).
   - Affichage effectif du composant `MatSnackBar`.
 
-- **Ce que chaque membre sait maintenant expliquer sans l'agent** :  
+- **Notions maîtrisées sans l'agent** :  
   - Pourquoi le guard Angular et l'interface ne suffisent pas à sécuriser la suppression (explication détaillée ci-dessous).
   - Pourquoi la suppression passe impérativement par un service Angular dédié.
   - Comment le backend Express et Mongoose s'assurent qu'un utilisateur ne supprime pas la piste d'un autre utilisateur.
@@ -193,7 +193,7 @@ Pour valider l'évaluation auprès de l'enseignant :
   5. Harmoniser le style CSS dans [`tracks-page.css`](frontend-starter/src/app/components/tracks-page/tracks-page.css) (style du `fieldset`, animations `@keyframes spin`, jauge émeraude).
   6. Valider le build avec `npm run build` et documenter l'analyse théorique sur les Observables multi-émissions.
 
-- **Vérifications réalisées par le binôme** :  
+- **Vérifications réalisées** :  
   - **Compilation sans erreur** : Validation de `ng build` compilant avec un code de sortie 0 en 8.4s.
   - **Transition des 4 états vérifiée dans le navigateur** :
     - *Avant sélection* : Le bouton affiche *« Envoyer le fichier »* et reste désactivé tant qu'aucun fichier n'est choisi.
@@ -213,7 +213,7 @@ Pour valider l'évaluation auprès de l'enseignant :
     En Angular 22, le moteur de transport HTTP par défaut de `provideHttpClient()` est passé de `XMLHttpRequest` à l'API moderne `FetchBackend`. Or, l'API native `fetch` du navigateur ne prend pas en charge la capture des événements de progression montante (`xhr.upload.onprogress`). Lorsque `reportProgress: true` est activé sous `FetchBackend`, Angular 22 bloque immédiatement la requête avec l'erreur d'exécution `NG02824`.  
     **Solution adoptée** : Ajout du provider `withXhr()` dans `main.ts` (`provideHttpClient(withInterceptors([authInterceptor]), withXhr())`), restaurant l'utilisation de `HttpXhrBackend` qui supporte nativement le suivi d'upload.
   - *Proposition rejetée : Lier `[disabled]="uploading()"` individuellement sur chaque `FormControl` dans le template* :  
-    En Angular Reactive Forms, l'attribut HTML `[disabled]` sur un input lié à un `FormControl` déclenche un avertissement explicite dans la console (*« It looks like you're using the disabled attribute with a Reactive Forms directive... »*). Pour respecter les standards Angular et le HTML sémantique, le binôme a adopté un conteneur `<fieldset [disabled]="uploading()">` qui désactive nativement tous les contrôles enfants sans aucun warning.
+    En Angular Reactive Forms, l'attribut HTML `[disabled]` sur un input lié à un `FormControl` déclenche un avertissement explicite dans la console (*« It looks like you're using the disabled attribute with a Reactive Forms directive... »*). Pour respecter les standards Angular et le HTML sémantique, l'adoption d'un conteneur `<fieldset [disabled]="uploading()">` s'est imposée pour désactiver nativement tous les contrôles enfants sans aucun warning.
   - *Erreur évitée : Considérer que le premier événement reçu marque la fin de la requête* :  
     Sans l'inspection de `event.type`, le composant tenterait de lire `event.body` dès le premier paquet de progression (où `event.body` est encore `undefined`), ce qui ferait crasher l'application avec un `TypeError`. Le filtrage explicite via `HttpEventType.Response` est obligatoire.
 
@@ -230,7 +230,7 @@ Pour valider l'évaluation auprès de l'enseignant :
   - Événements de progression `HttpEventType.UploadProgress` observés avec `event.loaded` et `event.total`.
   - Réponse finale `HTTP 201 Created` avec rechargement de la bibliothèque.
 
-- **Ce que chaque membre sait maintenant expliquer sans l'agent** :  
+- **Notions maîtrisées sans l'agent** :  
   - Pourquoi une requête HTTP avec progression émet un flux continu d'événements et comment Angular calcule le pourcentage.
   - Comment empêcher les doubles soumissions réseau grâce à la gestion d'état réactif (`uploading()`).
   - Pourquoi le token JWT et le mot de passe ne doivent jamais transiter dans les logs clients.
@@ -359,7 +359,7 @@ Pour valider l'évaluation auprès de l'enseignant :
      - Exécuter `cmd /c "npm test"` côté backend (`node --test`).
      - Exécuter `cmd /c "npm run build"` pour s'assurer de l'absence de régression.
 
-- **Vérifications réalisées par le binôme** :  
+- **Vérifications réalisées** :  
   - **Exécution Frontend (`npm test`)** : 11 tests exécutés et validés à 100% (4 suites de tests, 0 échec, durée : 1.90s).
   - **Exécution Backend (`npm test`)** : 6 tests exécutés et validés à 100% (durée : 0.86s, 0 échec).
   - **Validation du Build (`npm run build`)** : Compilation réussie en 6.49s, génération du bundle `dist/gpc` sans aucune erreur TypeScript ou de template.
@@ -387,7 +387,7 @@ Pour valider l'évaluation auprès de l'enseignant :
 - **Preuve de fonctionnement** :  
   - Sorties textuelles des consoles de tests reproduites ci-après.
 
-- **Ce que chaque membre sait maintenant expliquer sans l'agent** :  
+- **Notions maîtrisées sans l'agent** :  
   - La différence fondamentale entre un test unitaire (composant/service isolé avec mocks) et un test d'intégration (chaîne complète avec communication réelle).
   - Pourquoi les tests HTTP avec `HttpTestingController` n'ont besoin ni de backend ni de MongoDB.
   - Ce que valide un test d'intercepteur ou de guard fonctionnel dans l'architecture Angular.
@@ -511,7 +511,7 @@ Output location: C:\...\frontend-starter\dist\gpc
 
 ## 5. Restitution Orale — Réponses aux 6 Questions Clés du Sujet
 
-Conformément à la section **« Restitution orale »** du sujet TP3, chaque membre du binôme maîtrise et est en capacité de formuler les explications suivantes devant l'enseignant :
+Conformément à la section **« Restitution orale »** du sujet TP3, les explications suivantes sont maîtrisées pour la présentation devant l'enseignant :
 
 ### 1. Pourquoi la suppression passe par un service ?
 1. **Séparation des responsabilités (Single Responsibility / SOC)** :  

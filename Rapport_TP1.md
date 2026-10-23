@@ -20,7 +20,7 @@
   4. Modéliser le cycle de vie d'une connexion utilisateur via un diagramme de séquence Mermaid détaillé pas à pas.
   5. Formaliser l'analyse comparative entre les Signals (mémoire vive/réactivité) et le `localStorage` (disque/persistance).
 
-- **Vérifications réalisées par le binôme** :
+- **Vérifications réalisées** :
   - **Disponibilité backend** : Contrôle de l'endpoint de santé `GET http://localhost:3000/api/health` validé avec succès (`HTTP 200`, `{ status: "ok" }`).
   - **Configuration du proxy** : Vérification dans [`frontend-starter/proxy.conf.json`](frontend-starter/proxy.conf.json) de la redirection transparente du préfixe `/api` vers `http://localhost:3000`.
   - **Recoupement des spécifications** : Vérification croisée rigoureuse entre [`API_CONTRACT.md`](API_CONTRACT.md), le code des routes Express ([`backend/src/app.js`](backend/src/app.js)) et les interfaces TypeScript ([`user.model.ts`](frontend-starter/src/app/shared/models/user.model.ts), etc.).
@@ -28,7 +28,7 @@
 
 - **Erreurs ou propositions rejetées** :
   - *Proposition rejetée : Stocker l'objet utilisateur complet (`User`) dans `localStorage`* : L'agent ou le développeur pourrait être tenté de sérialiser tout l'objet `user` dans le `localStorage`. Cette proposition a été rejetée car seule la chaîne opaque du token (`gpc_token`) doit être persistée pour la reprise de session. Les informations de profil (`name`, `email`) doivent obligatoirement être rechargées depuis le serveur (`GET /api/users/me`) et maintenues dans un Signal en mémoire vive afin d'éviter tout désalignement de données si le profil est modifié sur un autre appareil ou en base.
-  - *Erreur identifiée : Croire que la sécurité ne repose que sur le front (Guard)* : Le binôme a vérifié que le `authGuard` d'Angular n'est qu'une commodité d'ergonomie utilisateur. La vraie barrière de sécurité est assurée par le middleware `auth` d'Express sur le serveur, qui rejette systématiquement toute requête sans token valide avec une erreur `401 Unauthorized`.
+  - *Erreur identifiée : Croire que la sécurité ne repose que sur le front (Guard)* : Il a été vérifié que le `authGuard` d'Angular n'est qu'une commodité d'ergonomie utilisateur. La vraie barrière de sécurité est assurée par le middleware `auth` d'Express sur le serveur, qui rejette systématiquement toute requête sans token valide avec une erreur `401 Unauthorized`.
 
 - **Fichiers effectivement modifiés** :
   - Aucun fichier de code source applicatif (étape d'audit et d'observation architecturale pure).
@@ -39,7 +39,7 @@
   - Test de santé `GET /api/health` répondant `{ status: "ok" }`.
   - Redirection automatique des utilisateurs non authentifiés vers la page de login.
 
-- **Ce que chaque membre sait maintenant expliquer sans l'agent** :
+- **Notions maîtrisées sans l'agent** :
   - Comment Angular 22 initialise une application standalone via `bootstrapApplication` et configure les providers globaux (`provideRouter`, `provideHttpClient`).
   - Comment fonctionne un guard fonctionnel moderne `CanActivateFn` et comment il évalue un Signal (`auth.token()`).
   - Comment un intercepteur fonctionnel (`HttpInterceptorFn`) clone une requête pour lui attacher l'en-tête `Authorization: Bearer <token>`.
@@ -239,7 +239,7 @@ sequenceDiagram
   4. Modifier [`AppComponent`](frontend-starter/src/app/components/app/app.ts) et [`app.html`](frontend-starter/src/app/components/app/app.html) pour adapter la barre de navigation selon l'état du signal `auth.token()` (badge du nom connecté, liens contextuels, bouton de déconnexion).
   5. Implémenter la méthode `logout()` dans `AuthService` assurant la suppression du `localStorage`, la remise à zéro des signaux, et la redirection vers `/login`.
 
-- **Vérifications réalisées par le binôme** :
+- **Vérifications réalisées** :
   - **Validation de saisie courte** : Saisie d'un mot de passe de 6 caractères -> le message *« Le mot de passe doit comporter au moins 8 caractères »* apparaît immédiatement dès que le champ est touché.
   - **Tentative avec identifiants faux** : Connexion avec `test@wrong.com` -> le backend renvoie 401 et le formulaire affiche *« Identifiants incorrects »* sans recharger la page.
   - **Connexion réussie** : Connexion avec `demo@example.com` / `Demo1234!` -> redirection vers `/tracks`, affichage du nom « Compte Démo » dans l'en-tête, disparition des liens « Connexion/Inscription ».
@@ -247,7 +247,7 @@ sequenceDiagram
   - **Vérification de sécurité console** : Inspection de la console DevTools -> aucune clé de token ni mot de passe n'est loggé en clair.
 
 - **Erreurs ou propositions rejetées** :
-  - *Proposition rejetée : N'afficher les erreurs qu'après avoir cliqué sur "Envoyer"* : Rejetée par le binôme car le confort utilisateur moderne réclame un retour d'erreur inline interactif (`control.invalid && control.touched`) qui prévient la saisie erronée avant même la soumission.
+  - *Proposition rejetée : N'afficher les erreurs qu'après avoir cliqué sur "Envoyer"* : Rejetée car le confort utilisateur moderne réclame un retour d'erreur inline interactif (`control.invalid && control.touched`) qui prévient la saisie erronée avant même la soumission.
   - *Proposition rejetée : Journaliser le token avec `console.log(response.token)` pour déboguer* : Rejetée catégoriquement pour respecter les règles strictes de sécurité interdisant l'exposition de données sensibles dans la console client.
   - *Erreur corrigée : Absence initiale de minLength(8) sur le formulaire de login* : Initialement seul le champ register avait une règle de longueur. Si un utilisateur tapait un mot de passe court lors du login, la requête partait inutilement vers le serveur pour être rejetée avec une erreur 400. La validation a été alignée côté front.
 
@@ -266,7 +266,7 @@ sequenceDiagram
   - Stockage effectif du token dans le `localStorage` sous la clé `gpc_token`.
   - Bascule visuelle instantanée de la barre de navigation.
 
-- **Ce que chaque membre sait maintenant expliquer sans l'agent** :
+- **Notions maîtrisées sans l'agent** :
   - Comment configurer un formulaire réactif (`FormGroup`, `FormControl`, `Validators`) et le lier au DOM (`[formGroup]`, `formControlName`).
   - Comment exploiter les directives de contrôle de flux Angular 22 (`@if`) pour afficher des messages d'erreur conditionnels.
   - Comment le Signal `auth.token()` propage instantanément l'état connecté à l'ensemble des composants sans passer par des EventEmitters complexes.
@@ -290,7 +290,7 @@ sequenceDiagram
   4. Mettre en place la détection des erreurs 401 dans le composant ainsi qu'au niveau de l'intercepteur global [`authInterceptor`](frontend-starter/src/app/shared/interceptors/auth.interceptor.ts) pour purger le stockage et rediriger l'utilisateur vers `/login`.
   5. Documenter les réponses aux questions théoriques de fin de mission du sujet (modèle IA utilisé, calcul des tokens consommés, critères de sélection d'un modèle, cartographie des routes).
 
-- **Vérifications réalisées par le binôme** :
+- **Vérifications réalisées** :
   - **Chargement automatique** : Accès à l'URL `/profile` -> le champ du nom et les informations (email, date de création) sont immédiatement renseignés sans clic additionnel.
   - **Modification du nom** : Changement du nom en *« Guitariste Pro »* et clic sur « Enregistrer » -> apparition du message vert de succès, et le nom affiché dans l'en-tête de navigation en haut à droite s'actualise immédiatement sans rechargement de page.
   - **Gestion de l'expiration / altération du token (401)** : Altération volontaire de la valeur dans la console (`localStorage.setItem('gpc_token', 'token_invalide')`) suivi d'une actualisation sur `/profile` -> la requête `GET /api/users/me` renvoie `401 Unauthorized`, l'application purge le token et redirige immédiatement l'utilisateur sur `/login`.
@@ -311,7 +311,7 @@ sequenceDiagram
   - Signal global synchronisé et en-tête d'application réactif.
   - Redirection automatique vers `/login` en cas de token corrompu.
 
-- **Ce que chaque membre sait maintenant expliquer sans l'agent** :
+- **Notions maîtrisées sans l'agent** :
   - Pourquoi centraliser la gestion des erreurs 401 dans un intercepteur HTTP évite de dupliquer la logique de redirection dans chaque composant.
   - Comment le Signal `currentUser` synchronise instantanément plusieurs composants indépendants dans l'arbre Angular.
   - La complémentarité entre la persistance sur disque (`localStorage`) et l'état réactif en mémoire vive (`Signals`).
@@ -361,30 +361,53 @@ sequenceDiagram
   1. [`backend/src/app.js`](backend/src/app.js#L249-L268) : La route `app.put('/api/users/me', auth, ...)` vérifie le token avec le middleware `auth`, extrait l'ID utilisateur `req.auth.sub`, et lance `User.findByIdAndUpdate(req.auth.sub, { $set: { name: req.body?.name } }, { new: true, runValidators: true })`.
   2. [`backend/src/models/User.js`](backend/src/models/User.js) : Valide le schéma et retourne l'objet nettoyé grâce à `.toPublic()`.
 
+#### 2.6. « Où se trouvent les traces du backend et comment les voir ? »
+- **Emplacement des traces backend** :
+  - Dans le terminal exécutant le serveur Node.js / Express (`cd backend && npm start`).
+  - L'application Express consigne les événements d'authentification et de cycle de vie avec des balises explicites : `[startup]`, `[auth] Création d'un token pour l'utilisateur <id>`, `[auth] Token accepté pour <id>`, `[auth] Authorization absente...`.
+- **Comment les observer** :
+  - **Côté serveur** : En visualisant la sortie standard (stdout/stderr) dans le terminal où tourne le backend sur le port 3000.
+  - **Côté client** : Dans les DevTools du navigateur (`F12`), onglet **Network (Réseau)** $\rightarrow$ filtre `Fetch/XHR`, en inspectant le code d'état HTTP retourné (`200`, `201`, `401`), les en-têtes et les réponses JSON renvoyées par Express.
+
 ---
 
-### 3. Checkpoint Network (Guide des vérifications à consigner)
+### 3. Checkpoint Network (Preuves de fonctionnement DevTools)
 
-Pour valider le TP1 auprès de l'enseignant, ouvrir l'onglet **Network** des DevTools (`F12`), filtrer sur `Fetch/XHR` et observer :
+Conformément aux exigences du sujet (section **Checkpoint** et **Livrables TP1**), les trois requêtes clés ont été observées et capturées directement dans l'inspecteur **Réseau** des DevTools (`F12`, filtre `XHR`) :
 
-1. **Connexion réussie** :
-   - Requête : `POST http://localhost:4200/api/auth/login`
-   - Corps envoyé : `{"email":"demo@example.com","password":"Demo1234!"}`
-   - Statut : `200 OK`
-   - Réponse : `{"token":"...","user":{"id":"...","name":"Compte Démo","email":"demo@example.com"}}`
-   - En-tête Authorization : Non présent (route publique).
-2. **Connexion refusée** :
-   - Requête : `POST http://localhost:4200/api/auth/login` avec mot de passe erroné
-   - Statut : `401 Unauthorized`
-   - Réponse : `{"message":"Identifiants incorrects"}`
-3. **Lecture du profil** :
-   - Requête : `GET http://localhost:4200/api/users/me`
-   - Statut : `200 OK`
-   - En-tête : `Authorization: Bearer <token>`
-   - Réponse : JSON contenant le nom, email, date de création.
-4. **Modification du profil** :
-   - Requête : `PUT http://localhost:4200/api/users/me`
-   - Corps envoyé : `{"name":"Nouveau Nom"}`
-   - Statut : `200 OK`
-   - En-tête : `Authorization: Bearer <token>`
-   - Réponse : Document User mis à jour.
+#### 3.1. Connexion réussie (POST /api/auth/login — HTTP 200)
+![Capture Network Connexion Réussie](screenshots/tp1/Connexion%20Reussie.png)
+
+- **Requête observée** : `POST http://localhost:4200/api/auth/login`
+- **Statut HTTP** : `200 OK` (Transfert : 598 o, durée : rapide)
+- **Corps envoyé** : `{"email":"demo@example.com","password":"[MASQUÉ]"}`
+- **En-tête Authorization** : Absent (route publique de connexion).
+- **Conséquences visibles sur la capture** :
+  - Redirection automatique réussie vers l'URL `/tracks`.
+  - Enchaînement immédiat avec la première requête paginée protégée : `GET /api/tracks?page=1&limit=5` (`200 OK`).
+  - Trace console : `[TracksPage] Pistes chargées : 5 sur 12`.
+
+#### 3.2. Connexion refusée (POST /api/auth/login — HTTP 401)
+![Capture Network Connexion Refusée](screenshots/tp1/Echec%20Connexion.png)
+
+- **Requête observée** : `POST http://localhost:4200/api/auth/login` avec identifiants erronés
+- **Statut HTTP** : `401 Unauthorized` (Transfert : 300 o)
+- **Corps de réponse** : `{"message":"Identifiants incorrects"}`
+- **Conséquences visibles sur la capture** :
+  - L'utilisateur reste sur la page `/login`.
+  - Retour d'erreur explicite consigné en console : `Http failure response for http://localhost:4200/api/auth/login: 401 Unauthorized`.
+  - Aucune redirection ni altération de session.
+
+#### 3.3. Consultation et modification du profil (GET / PUT /api/users/me — HTTP 200)
+![Capture Network Modification du Nom](screenshots/tp1/Modif%20Nom.png)
+
+- **Requêtes observées** :
+  1. `GET /api/users/me` (`200 OK`) : Chargement automatique des données du profil à l'arrivée sur `/profile`.
+  2. `PUT /api/users/me` (`200 OK`) : Soumission du formulaire lors de la modification du nom d'affichage en « Oumar ».
+- **Statut HTTP** : `200 OK`
+- **En-tête de sécurité** : `Authorization: Bearer <token>` injecté automatiquement sur chaque requête par `authInterceptor`.
+- **Conséquences visibles sur la capture** :
+  - Trace console confirmant l'enregistrement serveur : `[ProfilePage] Profil enregistré 6aaa5d58af4855d827eda86f`.
+  - Synchronisation instantanée du Signal global `currentUser` dans l'interface sans aucun rechargement complet de la page.
+
+
