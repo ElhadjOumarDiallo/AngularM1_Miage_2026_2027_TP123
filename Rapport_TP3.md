@@ -128,9 +128,9 @@ sequenceDiagram
 
 ---
 
-### 2.3. Réponses aux Questions Fondamentales de la Mission 5
+### 2.3. Justification de Sécurité de la Mission 5
 
-#### 1. « Pourquoi le guard Angular et l’interface ne suffisent pas à sécuriser la suppression ? »
+#### « Pourquoi le guard Angular et l’interface ne suffisent pas à sécuriser la suppression ? »
 - **Côté Frontend (Environnement non fiable / Untrusted Client)** :
   Le guard Angular (`authGuard`) et la désactivation des boutons dans l'interface ne sont que des **aides ergonomiques**. Ils s'exécutent dans le navigateur de l'utilisateur, où le code JavaScript peut être inspecté, modifié ou contourné en ouvrant la console DevTools. De plus, n'importe quel client externe (script `curl`, Postman, application mobile) peut forger une requête `DELETE http://localhost:3000/api/tracks/<id_victime>` directement vers l'API sans passer par l'interface Angular.
 - **Côté Backend (Barrière de sécurité infranchissable)** :
@@ -145,29 +145,20 @@ sequenceDiagram
      ```
   3. Même si un utilisateur malveillant devine l'identifiant d'une piste appartenant à un autre musicien, la condition `ownerId` ne correspondra pas, MongoDB ne trouvera aucun document, et le backend renverra une erreur `404 Not Found` sans supprimer le fichier.
 
-#### 2. « Pourquoi la suppression doit-elle passer par un service ? »
-1. **Séparation des responsabilités (SOC - Separation of Concerns)** : Le composant graphique `TracksPageComponent` est responsable de la présentation visuelle et de l'expérience utilisateur (afficher le SnackBar, gérer les signaux de chargement). La couche de communication réseau avec l'API REST relève de `TrackService`.
-2. **Réutilisabilité** : Si une autre partie de l'application (par exemple une future page d'administration ou un lecteur plein écran) a besoin de supprimer une piste, elle réutilise `TrackService.delete()` sans dupliquer les URLs et configurations HTTP.
-3. **Testabilité (Mission 7)** : En isolant les requêtes HTTP dans `TrackService`, il devient possible d'écrire des tests unitaires sur le composant en injectant un faux service simulé (*mock*), sans exécuter de véritables requêtes réseau.
-
 ---
 
-### 2.4. Checkpoint Network de la Suppression
+### 2.4. Preuve de Fonctionnement et Checkpoint Network
 
-Pour valider l'évaluation auprès de l'enseignant :
+![Capture Network Suppression](./screenshots/tp3/Suppression.png)
 
-1. **Cas Nominal (Suppression Réussie)** :
-   - **Requête** : `DELETE http://localhost:4200/api/tracks/6ac790407d41eb21f099faa5`
-   - **En-têtes** : `Authorization: Bearer <token_jwt>`
-   - **Statut HTTP** : `204 No Content`
-   - **Comportement UI** : Notification `MatSnackBar` visible, disparition de la carte, décrémentation du total de pistes.
-   - **Comportement Serveur** : Le document Mongoose est effacé et `fs.unlink()` supprime physiquement le fichier `.mp3` et sa pochette sur le disque du serveur dans `backend/uploads/`.
-
-2. **Cas Concurrence / Piste Déjà Supprimée** :
-   - **Requête** : `DELETE http://localhost:4200/api/tracks/6ac790407d41eb21f099faa5`
-   - **Statut HTTP** : `404 Not Found`
-   - **Corps JSON** : `{"message": "Piste inconnue"}`
-   - **Comportement UI** : Notification `MatSnackBar` d'avertissement et suppression automatique de la carte fantôme via `load()`.
+- **Requête observée** : `DELETE http://localhost:4200/api/tracks/6acf7555c473d8e7111d6c9a`
+- **Statut HTTP** : `204 No Content` (Transfert : 152 o)
+- **En-têtes de sécurité** : `Authorization: Bearer <token_jwt>` transmis automatiquement par l'intercepteur.
+- **Conséquences visibles sur la capture** :
+  - **Suppression confirmée** : La requête `DELETE` est validée côté serveur avec le code `204 No Content`.
+  - **Rafraîchissement automatique** : Enchaînement immédiat avec `GET http://localhost:4200/api/tracks?page=1&limit=5` (`200 OK`) pour recharger la liste sans la piste supprimée.
+  - **Trace console** : `[TracksPage] Pistes chargées : 5 sur 12` (le compteur total de morceaux s'est décrémenté en direct).
+  - **Nettoyage serveur** : Le document Mongoose est effacé et `fs.unlink()` supprime physiquement le fichier audio et sa pochette sur le disque du serveur dans `backend/data/uploads/`.
 
 ---
 
@@ -296,36 +287,18 @@ sequenceDiagram
 
 ---
 
-### 3.4. Checkpoint Network de la Progression d'Upload
+### 3.4. Preuve de Fonctionnement et Checkpoint Network
 
-Pour valider l'évaluation auprès de l'enseignant :
+![Capture Network Progression Upload](./screenshots/tp3/Prog%20Upload.png)
 
-1. **Requête HTTP** :
-   - **Méthode** : `POST http://localhost:4200/api/tracks`
-   - **En-têtes** :
-     - `Authorization: Bearer <token_jwt>` (injecté automatiquement par `authInterceptor`)
-     - `Content-Type: multipart/form-data; boundary=----WebKitFormBoundary...`
-   - **Corps envoyé** :
-     - Champ `audio` : flux binaire du fichier audio (`song1.mp3`)
-     - Champ `title` : `"Solo Blues en La mineur"`
-2. **Événements observés** :
-   - Série d'événements `UploadProgress` avec progression croissante du ratio `loaded / total` de 0% à 100%.
-   - Statut HTTP final : `201 Created`.
-   - Corps de réponse :
-     ```json
-     {
-       "id": "6ac795007d41eb21f099faa8",
-       "ownerId": "6ac6f5c8...",
-       "title": "Solo Blues en La mineur",
-       "originalName": "song1.mp3",
-       "mimeType": "audio/mpeg",
-       "size": 3605337,
-       "createdAt": "2026-10-14T12:00:00.000Z"
-     }
-     ```
-3. **Comportement UI final** :
-   - Disparition de la barre de progression, affichage de l'alerte verte et du toast `MatSnackBar`.
-   - Remise à zéro des champs et insertion immédiate du nouveau morceau en première position de la liste.
+- **Requête observée** : `POST http://localhost:4200/api/tracks` (en cours de transfert)
+- **En-têtes** : `Content-Type: multipart/form-data`, `Authorization: Bearer <token_jwt>`.
+- **Conséquences visibles sur la capture** :
+  - **Simulation de bande passante (Regular 3G)** : Permet d'observer et de capturer le flux des événements de progression montante.
+  - **Bannière animée et jauge** : Affichage dynamique de *« 🔄 Téléversement en cours... 17% »* avec barre de progression verte `<progress>`.
+  - **Verrouillage anti-double soumission** : Le formulaire est désactivé via le conteneur `<fieldset [disabled]>` et le bouton principal est grisé affichant *« ⏳ Téléversement (17%)… »*.
+  - **Trace console** : `[TracksPage] Progression upload : 17% (1061577/6405463 octets)` validant la capture continue des événements `HttpEventType.UploadProgress`.
+  - **Finalisation** : Réception du statut `201 Created`, affichage du toast `MatSnackBar` de confirmation et rechargement de la bibliothèque.
 
 ---
 
@@ -425,93 +398,25 @@ Pour valider l'évaluation auprès de l'enseignant :
 
 ---
 
-### 4.3. Traces Réelles d'Exécution des Tests
+### 4.3. Synthèse d'Exécution et Preuve des Tests
 
-#### 1. Console Frontend (`npm test` dans `frontend-starter`) :
+![Capture Exécution des Tests Frontend](./screenshots/tp3/Tests.png)
 
-```text
-> gpc-angular-starter@1.0.0 test
-> ng test --watch=false
-
-> Building...
-√ Building...
-Application bundle generation complete. [1.882 seconds] - 2026-10-14T13:01:12.347Z
-
- RUN  v4.1.11 C:/Users/Admin/Desktop/Ang/TPs/AngularM1_Miage_2026_2027_TP123/frontend-starter
-
- ✓  gpc  src/app/shared/services/track.service.spec.ts (4 tests) 49ms
- ✓  gpc  src/app/shared/services/auth.service.spec.ts (2 tests) 40ms
- ✓  gpc  src/app/shared/guards/auth.guard.spec.ts (2 tests) 39ms
-stderr | src/app/shared/interceptors/auth.interceptor.spec.ts > authInterceptor > doit déconnecter l’utilisateur et naviguer vers /login sur une erreur 401
-[authInterceptor] Jeton expiré ou invalide (401) : retour vers /login
-
- ✓  gpc  src/app/shared/interceptors/auth.interceptor.spec.ts (3 tests) 55ms
-
- Test Files  4 passed (4)
-      Tests  11 passed (11)
-   Start at  15:01:12
-   Duration  1.90s (transform 300ms, setup 2.29s, import 458ms, tests 182ms, environment 3.22s)
-```
-
-#### 2. Console Backend (`npm test` dans `backend`) :
-
-```text
-> gpc-api@3.0.0 test
-> node --test
-
-[startup] Dossier des uploads prêt : C:\...\backend\data\uploads
-[health] Vérification de l'API
-[http] GET /api/health -> 200 (6 ms)
-✔ health sans dépendre de MongoDB (62.3774ms)
-✔ schémas Mongoose et relation (5.54ms)
-[auth] Authorization absente pour GET /api/tracks
-[http] GET /api/tracks -> 401 (2 ms)
-✔ sécurité : 401 sans JWT sur /api/tracks (8.3361ms)
-[auth] Token invalide ou expiré JsonWebTokenError: invalid token
-[http] GET /api/tracks -> 401 (2 ms)
-✔ sécurité : 401 avec un JWT invalide sur /api/tracks (5.1844ms)
-[auth] Token accepté pour 6acf7cedee82263dc5beac2b
-[tracks] Upload sans fichier par 6acf7cedee82263dc5beac2b
-[http] POST /api/tracks -> 400 (8 ms)
-✔ contrat upload : 400 si aucun fichier audio n'est transmis (19.3506ms)
-[auth] Token accepté pour 6acf7cedee82263dc5beac2c
-[multer] Type audio refusé : text/plain Error: Format audio non accepté
-[tracks] Erreur Multer upload Error: Format audio non accepté
-[http] POST /api/tracks -> 400 (5 ms)
-✔ contrat upload : 400 si le type MIME audio est refusé (ex: text/plain) (10.5866ms)
-ℹ tests 6
-ℹ suites 0
-ℹ pass 6
-ℹ fail 0
-ℹ cancelled 0
-ℹ skipped 0
-ℹ todo 0
-ℹ duration_ms 859.4687
-```
-
-#### 3. Console Build Final (`npm run build` dans `frontend-starter`) :
-
-```text
-> gpc-angular-starter@1.0.0 build
-> ng build
-
-> Building...
-√ Building...
-Initial chunk files | Names         |  Raw size
-main.js             | main          |   2.54 MB | 
-styles.css          | styles        | 114.38 kB | 
-
-                    | Initial total |   2.65 MB
-
-Application bundle generation complete. [6.491 seconds] - 2026-10-14T13:00:47.301Z
-Output location: C:\...\frontend-starter\dist\gpc
-```
+- **Test runner** : Vitest sous Angular 22 (`ng test --watch=false`).
+- **Résultat** : **11 tests passés avec succès (100%)** sur les 4 suites de tests :
+  - `track.service.spec.ts` (4 tests passés)
+  - `auth.service.spec.ts` (2 tests passés)
+  - `auth.guard.spec.ts` (2 tests passés)
+  - `auth.interceptor.spec.ts` (3 tests passés)
+- **Trace d'interception** : `[authInterceptor] Jeton expiré ou invalide (401) : retour vers /login`.
+- **Durée** : Moins d'une seconde d'exécution effective (`988ms`), confirmant l'hermétisme et la rapidité des tests sans dépendance à MongoDB.
+- **Validation Backend & Build** : 6 tests `node --test` validés et `npm run build` exécuté avec succès (code 0, bundle généré en 5.8s sans avertissement).
 
 ---
 
-## 5. Restitution Orale — Réponses aux 6 Questions Clés du Sujet
+## 5. Synthèse Conceptuelle et Justifications Architecturales
 
-Conformément à la section **« Restitution orale »** du sujet TP3, les explications suivantes sont maîtrisées pour la présentation devant l'enseignant :
+Conformément aux attendus d'évaluation du TP3, cette section formalise les justifications architecturales et les réponses aux questions fondamentales régissant les choix de conception :
 
 ### 1. Pourquoi la suppression passe par un service ?
 1. **Séparation des responsabilités (Single Responsibility / SOC)** :  
@@ -571,18 +476,3 @@ Conformément à la section **« Restitution orale »** du sujet TP3, les explic
 | **Vitesse d'exécution** | **Extrêmement rapide** (quelques dizaines de millisecondes par test). | **Plus lent** (temps d'initialisation des connexions réseau, I/O disque, opérations base de données). |
 | **Exemple dans notre projet** | Vérifier dans `TrackService.spec.ts` que `list(2, 5)` génère une requête avec les paramètres `page=2&limit=5`. | Démarrer l'API Express, créer un document dans MongoDB, envoyer un véritable fichier audio avec `fetch()` et vérifier qu'il est écrit sur le disque. |
 | **Objectif principal** | Valider la logique interne, les algorithmes et la robustesse face aux cas limites sans effet de bord. | Valider le contrat global, la cohérence des échanges et le bon fonctionnement de la chaîne de bout en bout. |
-
----
-
-## 6. Conclusion et État des Livrables TP3
-
-Tous les livrables attendus pour le TP3 ont été intégralement réalisés, vérifiés et documentés :
-
-- [x] **Suppression fonctionnelle d’une piste** (Mission 5) : confirmation `window.confirm`, icône dynamique `hourglass_empty`, notification `MatSnackBar`, gestion d'erreur `404`/`403`, arrêt immédiat du lecteur audio et rafraîchissement de la pagination.
-- [x] **Progression d’upload avec états visibles** (Mission 6) : 4 états visuels distincts, barre de progression animée avec pourcentage en temps réel, verrouillage total du formulaire par `<fieldset [disabled]>` anti-double soumission, et activation de `withXhr()` pour éliminer l'erreur `NG02824`.
-- [x] **Au moins trois tests frontend automatisés** (Mission 7) : **11 tests** implémentés couvrant `AuthService`, `TrackService`, `authInterceptor` et `authGuard`, tous validés sous Vitest sans dépendance à MongoDB.
-- [x] **Extension de tests backend** (Mission 7) : **6 tests** sous `node --test` couvrant la santé de l'API, les relations Mongoose, les rejets de sécurité `401` et les rejets de contrat Multer `400`.
-- [x] **Validation du build de production** : `npm run build` exécuté avec succès (bundle généré sans aucune erreur).
-- [x] **Rapport d'usage de l'IA** : Rédigé selon les 8 rubriques standardisées avec diagrammes de séquence Mermaid, matrices de tests et réponses complètes à l'ensemble des questions de la restitution orale.
-
-

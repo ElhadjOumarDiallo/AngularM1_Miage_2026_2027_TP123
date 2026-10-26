@@ -574,83 +574,45 @@ Conformément à la section **« AVANCÉ — Image de couverture »** du sujet, 
 
 ---
 
-### 4.6. Checkpoint Network Complet et Preuves de Fonctionnement
+### 4.6. Checkpoint Network (Preuves de fonctionnement DevTools)
 
-Voici les preuves d'exécution réseau vérifiées et documentées pour valider l'ensemble des exigences du TP2 :
+Conformément aux exigences du sujet (section **Checkpoint** et **Livrables TP2**), les requêtes clés ont été observées et capturées directement dans l'inspecteur **Réseau** des DevTools (`F12`, filtre `XHR`) :
 
-#### Preuve 1 : Pagination Serveur Réelle
-- **Requête** : `GET http://localhost:4200/api/tracks?page=1&limit=5`
-- **En-têtes** : `Authorization: Bearer <token_jwt>`
-- **Statut** : `HTTP 200 OK`
-- **Corps de réponse** :
-  ```json
-  {
-    "items": [
-      { "id": "6ac78a377d41eb21f099faa4", "title": "autre", "mimeType": "audio/mpeg", "size": 3774873 }
-    ],
-    "page": 1,
-    "limit": 5,
-    "total": 11,
-    "pages": 3
-  }
-  ```
-- **Preuve** : En cliquant sur la page suivante du MatPaginator, la requête `GET /api/tracks?page=2&limit=5` est immédiatement émise avec le nouveau numéro de page.
+#### 4.6.1. Pagination Serveur Réelle et Cards de Bibliothèque (GET /api/tracks — HTTP 200)
+![Capture Network Pagination](screenshots/tp2/Pagination.png)
 
-#### Preuve 2 : Upload Multipart Authentifié avec Progression
-- **Requête** : `POST http://localhost:4200/api/tracks`
-- **En-têtes** : `Content-Type: multipart/form-data; boundary=...`, `Authorization: Bearer <token_jwt>`
-- **Corps envoyé** : Champ `audio` (binaire MP3) + Champ `title` ("Solo Blues")
-- **Progression** : Événements `HttpEventType.UploadProgress` observés de 0% à 100% sur la barre de progression.
-- **Statut** : `HTTP 201 Created`
-- **Corps de réponse** :
-  ```json
-  {
-    "id": "6ac790407d41eb21f099faa5",
-    "ownerId": "6ac6f5c8...",
-    "title": "Solo Blues",
-    "originalName": "song1.mp3",
-    "mimeType": "audio/mpeg",
-    "size": 3774873,
-    "createdAt": "2026-10-08T12:44:45.123Z"
-  }
-  ```
+- **Requête observée** : `GET http://localhost:4200/api/tracks?page=2&limit=5`
+- **Statut HTTP** : `200 OK` (Transfert : 2,06 Ko / 1,81 Ko)
+- **En-têtes de sécurité** : `Authorization: Bearer <token_jwt>` transmis automatiquement par l'intercepteur.
+- **Conséquences visibles sur la capture** :
+  - **Composant MatPaginator** : Affichage de *« Morceaux par page : 5 »*, indicateur de plage *« 6 – 10 sur 12 »*, et boutons de saut direct vers la première page (`|<`) et la dernière page (`>|`).
+  - **Cards de bibliothèque lisibles** : Cartes épurées avec titre, nom de l'artiste (`king`, `lil`, `dz`), badge de format (`MP3`), taille (`3.4 Mo`, `6.1 Mo`), date d'ajout et vignettes de pochette.
+  - **Trace console** : `[TracksPage] Pistes chargées : 5 sur 12`.
+  - **Garantie** : À chaque changement de page, une nouvelle requête HTTP réelle est transmise au backend. Les pistes ne sont jamais découpées localement en mémoire vive.
 
-#### Preuve 3 : Lecture Audio Authentifiée (Flux Binaire & Blob)
-- **Requête** : `GET http://localhost:4200/api/tracks/6ac78a377d41eb21f099faa4/audio`
-- **En-têtes** : `Authorization: Bearer <token_jwt>`
-- **Statut** : `HTTP 200 OK`
-- **En-tête de réponse** : `Content-Type: audio/mpeg`
-- **Résultat client** : Réception du `Blob`, génération de `blob:http://localhost:4200/...` et lecture continue dans le lecteur HTML5.
+#### 4.6.2. Upload Multipart Authentifié avec Rafraîchissement Immédiat (POST /api/tracks — HTTP 201)
+![Capture Network Upload](screenshots/tp2/Upload.png)
 
-#### Preuve 4 : Rejet d'un Fichier Invalide (Erreur 400)
-- **Scénario Client** : Tentative de sélection d'un fichier `.txt` ou de 30 Mo -> Rejet immédiat dans le formulaire avec le message : *« Format de fichier non accepté »* ou *« Dépasse 25 Mo »*.
-- **Scénario API Direct** : Envoi forcé d'un fichier texte via multipart -> Multer intercepte et renvoie :
-  - **Statut** : `HTTP 400 Bad Request`
-  - **Corps de réponse** : `{"message":"Format audio non accepté"}`
+- **Requêtes observées** :
+  1. `POST http://localhost:4200/api/tracks` $\rightarrow$ `201 Created` (upload multipart du fichier binaire et des métadonnées).
+  2. `GET http://localhost:4200/api/tracks?page=1&limit=5` $\rightarrow$ `200 OK` (rechargement automatique de la première page).
+- **Statut HTTP** : `201 Created` (Transfert : 475 o)
+- **En-têtes** : `Content-Type: multipart/form-data; boundary=...`, `Authorization: Bearer <token_jwt>`.
+- **Conséquences visibles sur la capture** :
+  - Le morceau importé (`FMAB`, fichier `song1.mp3`, taille `3.4 Mo`, date `26 oct. 2026`) apparaît instantanément en tête de la bibliothèque.
+  - **Trace console** : `[TracksPage] Pistes chargées : 5 sur 13` (le total de pistes passe dynamiquement de 12 à 13 sans rechargement complet de la page).
+  - Réinitialisation automatique du formulaire après succès.
 
-#### Preuve 5 : Isolation Propriétaire et Sécurité
-- **Test d'accès anonyme (sans JWT)** : Requête sur `GET /api/tracks/:id/audio` sans en-tête `Authorization` -> rejeté avec `HTTP 401 Unauthorized`.
-- **Test d'accès croisé (entre deux utilisateurs)** : Si un utilisateur A tente d'accéder à la piste d'un utilisateur B, la requête MongoDB `Track.findOne({ _id: id, ownerId: req.auth.sub })` échoue et Express renvoie :
-  - **Statut** : `HTTP 404 Not Found` avec message `{"message":"Piste inconnue"}`.
-  - **Garantie** : Aucune fuite d'information ni d'audio entre comptes distincts.
+#### 4.6.3. Lecture Audio Authentifiée (GET /api/tracks/:id/audio — Flux Binaire, Cache HTTP & Blob)
+![Capture Network Lecture Audio](screenshots/tp2/Lecture%20Audio.png)
 
-#### Preuve 6 : Suppression Sécurisée (Code 204)
-- **Requête** : `DELETE http://localhost:4200/api/tracks/6ac790407d41eb21f099faa5`
-- **En-têtes** : `Authorization: Bearer <token_jwt>`
-- **Statut** : `HTTP 204 No Content`
-- **Résultat serveur** : Document MongoDB effacé et fichier physique sur disque supprimé via `fs.unlink()`.
+- **Requête observée** : `GET http://localhost:4200/api/tracks/6acf6d24c473d8e7111d6c91/audio`
+- **Statut HTTP** : `304 Not Modified` / `200 OK` (Transfert : 6,41 Mo)
+  - *Gestion du cache HTTP* : Express (`res.sendFile`) gère les en-têtes de validation de cache (`ETag`, `Last-Modified`). Le navigateur vérifie avec `If-None-Match` si la ressource a changé : le fichier étant intègre sur le disque, Express valide instantanément la session et autorise le navigateur à utiliser le flux déjà présent en mémoire cache, économisant la bande passante.
+- **En-têtes de réponse** : `accept-ranges: bytes`, `cache-control: public, max-age=0`.
+- **Conséquences visibles sur la capture** :
+  - **Bannière d'écoute active** : Affichage du titre, de l'artiste et de la pochette d'album : *« En cours d'écoute : silhouette (Nemu ネム) (song2.mp3 · 6.1 Mo) »*.
+  - **Lecteur HTML5 intégré** : Lecture fluide avec progression temporelle active (`1:24 / 5:20`) et contrôles de volume.
+  - **Trace console** : `[TracksPage] Audio chargé avec succès : 6acf6d24c473d8e7111d6c91`.
+  - **Sécurité et mémoire** : Flux binaire récupéré via `HttpClient` (avec JWT), encapsulé dans un `Blob` avec URL locale `blob:http://...`, puis révoqué proprement via `URL.revokeObjectURL()` lors du changement de piste ou à la destruction du composant (`ngOnDestroy`).
 
----
-
-### 4.7. Synthèse des Livrables du TP2
-
-| Livrable attendu | Statut | Justification dans le projet |
-|---|---|---|
-| **Code frontend complété** | **Validé** | `TrackService`, `TracksPageComponent`, templates et styles entièrement intégrés et testés sans erreur de build. |
-| **Cards de bibliothèque lisibles** | **Validé** | Cards responsives avec titre, nom original, badge de format, taille formatée, date formatée, lecture et suppression. |
-| **Capture Network pagination & upload** | **Validé** | Requêtes `GET /api/tracks?page=X&limit=Y` et `POST /api/tracks` avec `multipart/form-data` documentées avec corps réels. |
-| **Démonstration lecture audio authentifiée** | **Validé** | Mécanisme `Blob` + `URL.createObjectURL` fonctionnel avec protection 401 confirmée et révocation mémoire `ngOnDestroy`. |
-| **Explication écrite Blob / ObjectURL** | **Validé** | Section 3.4 et 3.6 détaillant l'isolation du moteur média navigateur et le rôle de l'intercepteur JWT. |
-| **Réponses questions mémoire / streaming** | **Validé** | Section 3.6 fournissant les réponses approfondies aux 5 questions théoriques du sujet. |
-| **Améliorations facultatives** | **Validé** | Les 5 améliorations (progression, suppression, refresh, formatage taille/date, filtre par titre) implémentées et actives. |
-| **Option Avancée : Image de couverture** | **Validé** | Upload d'image (JPEG/PNG/WebP), recherche de pochette Web (iTunes/MusicBrainz), prévisualisation, vignettes responsives et suppression coordonnée. |
