@@ -1,21 +1,62 @@
-<header>
-  <div>
-    <b>Guitar Practice Cloud</b>
-    <small> Le cloud qui manque à votre ampli</small>
+<header class="app-header">
+  <div class="brand">
+    <div class="brand-badge" title="Guitar Practice Cloud">
+      <!-- Icône Guitare Électrique Sur-Mesure (Unique et distinctive) -->
+      <svg class="brand-icon-svg" viewBox="0 0 24 24" width="22" height="22" fill="currentColor" aria-hidden="true">
+        <path d="M21.71 2.29a1 1 0 0 0-1.42 0l-2.09 2.09-.7-.23-.85.85.5 1.5-7.3 7.3a2.5 2.5 0 0 0-.6-.1 2.5 2.5 0 0 0-1.77.73l-1.41 1.42a3.5 3.5 0 0 0 0 4.95 3.5 3.5 0 0 0 4.95 0l1.42-1.41c.46-.47.67-1.11.63-1.74l7.3-7.3 1.5.5.85-.85-.23-.7 2.09-2.09a1 1 0 0 0 0-1.42zM7.88 19.41a1.5 1.5 0 0 1-2.12 0 1.5 1.5 0 0 1 0-2.12l1.41-1.42a1.5 1.5 0 0 1 2.12 0 1.5 1.5 0 0 1 0 2.12zM14.5 10.5l-1-1 1.5-1.5 1 1z"/>
+      </svg>
+    </div>
+    <div class="brand-info">
+      <a routerLink="/" class="brand-title">Guitar Practice Cloud</a>
+      <span class="brand-tagline">Le cloud qui manque à votre ampli</span>
+    </div>
   </div>
-  <nav aria-label="Navigation principale">
-    @if (auth.token()) {
-      @if (auth.currentUser(); as user) {
-        <span class="user-tag">{{ user.name }}</span>
+
+  <div class="header-actions">
+    <!-- Bouton bascule de thème clair / sombre (Bonus UX valorisant) -->
+    <button
+      type="button"
+      class="theme-toggle-btn"
+      (click)="toggleTheme()"
+      [title]="isDark() ? 'Passer en mode clair' : 'Passer en mode sombre'"
+      aria-label="Basculer le thème">
+      <span class="material-icons theme-icon">{{ isDark() ? 'light_mode' : 'dark_mode' }}</span>
+      <span class="theme-label">{{ isDark() ? 'Clair' : 'Sombre' }}</span>
+    </button>
+
+    <nav aria-label="Navigation principale" class="main-nav">
+      @if (auth.token()) {
+        @if (auth.currentUser(); as user) {
+          <!-- Badge stylisé utilisateur -->
+          <div class="user-pill" title="Connecté en tant que {{ user.name }}">
+            <span class="user-avatar">{{ user.name.charAt(0).toUpperCase() }}</span>
+            <span class="user-name">{{ user.name }}</span>
+          </div>
+        }
+        <a routerLink="/tracks" routerLinkActive="active" class="nav-link">
+          <span class="material-icons nav-icon">queue_music</span>
+          <span>Backing tracks</span>
+        </a>
+        <a routerLink="/profile" routerLinkActive="active" class="nav-link">
+          <span class="material-icons nav-icon">account_circle</span>
+          <span>Profil</span>
+        </a>
+        <button type="button" class="logout-btn" (click)="logout()" title="Se déconnecter de votre session">
+          <span class="material-icons nav-icon">logout</span>
+          <span>Déconnexion</span>
+        </button>
+      } @else {
+        <a routerLink="/login" routerLinkActive="active" class="nav-link">
+          <span class="material-icons nav-icon">login</span>
+          <span>Connexion</span>
+        </a>
+        <a routerLink="/register" routerLinkActive="active" class="nav-link nav-link-highlight">
+          <span class="material-icons nav-icon">person_add</span>
+          <span>Inscription</span>
+        </a>
       }
-      <a routerLink="/tracks">Backing tracks</a>
-      <a routerLink="/profile">Profil</a>
-      <button type="button" class="logout-btn" (click)="logout()">Déconnexion</button>
-    } @else {
-      <a routerLink="/login">Connexion</a>
-      <a routerLink="/register">Inscription</a>
-    }
-  </nav>
+    </nav>
+  </div>
 </header>
 
 <main>
